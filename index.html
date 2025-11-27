@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://esm.sh">
     <link rel="preconnect" href="https://www.gstatic.com">
 
-    <!-- Styles critiques pour l'écran de chargement (s'affiche AVANT tout le reste) -->
+    <!-- Styles critiques -->
     <style>
         body { margin: 0; padding: 0; background-color: #fff1f2; font-family: system-ui, -apple-system, sans-serif; }
         .app-loader {
@@ -33,17 +33,14 @@
         }
         @keyframes spin { to { transform: rotate(360deg); } }
         
-        /* Masquer la scrollbar tout en gardant le scroll */
         .scrollbar-thin::-webkit-scrollbar { width: 6px; }
         .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
         .scrollbar-thin::-webkit-scrollbar-thumb { background-color: #fecdd3; border-radius: 20px; }
         body { -webkit-tap-highlight-color: transparent; }
     </style>
 
-    <!-- 1. TAILWIND -->
+    <!-- Outils -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- 2. BABEL -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
     <script>
@@ -54,7 +51,6 @@
 </head>
 <body>
 
-    <!-- Écran de chargement HTML pur (Visible immédiatement) -->
     <div id="root">
         <div class="app-loader">
             <div class="loader-icon">K</div>
@@ -64,7 +60,6 @@
         </div>
     </div>
 
-    <!-- 3. CODE REACT -->
     <script type="text/babel" data-type="module">
         
         import React, { useState, useEffect, useRef } from 'https://esm.sh/react@18.2.0';
@@ -221,20 +216,37 @@
                 joinRoom(newCode);
             };
 
+            // --- CORRECTION : FONCTION REJOINDRE MANQUANTE AJOUTÉE ICI ---
+            const handleJoinSubmit = (e) => {
+                e.preventDefault();
+                if (roomInput.trim().length < 3) return;
+                const code = roomInput.trim().toUpperCase().replace(/\s/g, '');
+                joinRoom(code);
+            };
+
             const joinRoom = async (roomCode) => {
                 if (!demoMode && user) {
                     const roomDocRef = doc(db, 'artifacts', appId, 'public', 'data', ROOMS_COLLECTION, roomCode);
                     const docSnap = await getDoc(roomDocRef);
+                    
+                    // Si le salon n'existe pas
+                    if (!docSnap.exists() && !isAdmin) {
+                        alert("Ce salon n'existe pas ou le code est incorrect.");
+                        return;
+                    }
+
                     if (docSnap.exists()) {
                         const data = docSnap.data();
-                        if (data.bannedUsers && data.bannedUsers.includes(user.uid) && !isAdmin) { alert("Banni !"); return; }
+                        if (data.bannedUsers && data.bannedUsers.includes(user.uid) && !isAdmin) { alert("Accès refusé : Vous êtes banni."); return; }
                     }
                 }
                 setCurrentRoom(roomCode); setMessages([]);
                 if (!isAdmin && !demoMode && user && db) {
                     try {
                         const roomDocRef = doc(db, 'artifacts', appId, 'public', 'data', ROOMS_COLLECTION, roomCode);
-                        await updateDoc(roomDocRef, { activeUsers: arrayUnion({ uid: user.uid, name: username }) });
+                        // On met à jour ou on crée si nécessaire (cas rare)
+                        await setDoc(roomDocRef, { activeUsers: arrayUnion({ uid: user.uid, name: username }) }, { merge: true });
+                        
                         const roomRef = collection(db, 'artifacts', appId, 'public', 'data', ROOMS_COLLECTION, roomCode, 'messages');
                         await addDoc(roomRef, { text: `${username} a rejoint le canal.`, senderId: 'system', senderName: 'LOG', timestamp: serverTimestamp(), type: 'system' });
                     } catch (e) {}
@@ -292,8 +304,8 @@
             const copyRoomCode = () => navigator.clipboard.writeText(currentRoom);
             const isCreator = roomData?.creatorId === user?.uid;
 
-            // RENDER - Garde le même style, mais le JSX est maintenant valide
-            if (loading) return null; // L'écran HTML pur s'affiche à la place
+            // RENDER
+            if (loading) return null; 
 
             if (!isSetup) return (
                 <div className="flex h-screen w-full flex-col items-center justify-center bg-rose-50 p-6 font-sans text-rose-900 animate-in fade-in duration-500">
@@ -349,7 +361,7 @@
                                     <div className="flex items-center gap-4"><div className="h-12 w-12 rounded-full bg-rose-100 flex items-center justify-center text-rose-500 group-hover:scale-110 transition-transform"><Plus size={24} /></div><div className="text-left"><p className="font-bold text-gray-800">Créer un salon</p><p className="text-xs text-gray-400">Créer un canal privé</p></div></div><ArrowRight size={20} className="text-rose-300 group-hover:text-rose-500" />
                                 </button>
                                 <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-                                    <form onSubmit={(e) => { e.preventDefault(); handleJoinSubmit(e); }} className="flex gap-2">
+                                    <form onSubmit={handleJoinSubmit} className="flex gap-2">
                                         <input type="text" placeholder="CODE" value={roomInput} onChange={(e) => setRoomInput(e.target.value)} className="flex-1 bg-gray-50 rounded-xl px-4 py-3 font-mono text-sm border focus:border-rose-300 focus:outline-none uppercase" />
                                         <button type="submit" disabled={roomInput.length < 3} className="bg-gray-900 text-white px-4 rounded-xl font-bold disabled:opacity-50 hover:bg-black transition-colors">Rejoindre</button>
                                     </form>
