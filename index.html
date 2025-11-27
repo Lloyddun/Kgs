@@ -3,58 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>KGS - Ultimate</title>
+    <title>KGS - Nexus</title>
     
-    <!-- Liens CDN optimisés -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link rel="preconnect" href="https://cdn.tailwindcss.com">
+    <link rel="preconnect" href="https://unpkg.com">
+    <link rel="preconnect" href="https://esm.sh">
+    <link rel="preconnect" href="https://www.gstatic.com">
 
     <style>
-        body { background-color: #000; color: white; font-family: system-ui, -apple-system, sans-serif; overflow: hidden; }
-        
-        /* Splash Screen Optimisé */
+        body { margin: 0; padding: 0; background-color: #000; font-family: system-ui, -apple-system, sans-serif; overflow: hidden; color: white; }
         .app-loader {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: black; z-index: 9999; display: flex; flex-direction: column; 
-            align-items: center; justify-content: center; transition: opacity 0.5s ease;
+            background: #000; z-index: 9999; display: flex; flex-direction: column; 
+            align-items: center; justify-content: center;
         }
         .pulse-ring {
             width: 80px; height: 80px; border-radius: 50%; border: 4px solid #f43f5e;
             animation: pulse-ring 2s infinite; position: absolute;
         }
         .loader-logo { z-index: 2; font-weight: 900; font-size: 40px; color: white; }
+        @keyframes pulse-ring { 0% { transform: scale(0.5); opacity: 1; } 100% { transform: scale(1.5); opacity: 0; } }
         
-        @keyframes pulse-ring {
-            0% { transform: scale(0.5); opacity: 1; }
-            100% { transform: scale(1.5); opacity: 0; }
-        }
-
-        /* Scrollbar invisible mais fonctionnelle */
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-        /* Effets de verre */
-        .glass { background: rgba(20, 20, 20, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .glass { background: rgba(20, 20, 20, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
         .glass-rose { background: rgba(244, 63, 94, 0.15); backdrop-filter: blur(10px); border: 1px solid rgba(244, 63, 94, 0.3); }
-        
-        /* Animation Toast */
-        @keyframes slideIn { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        .toast { animation: slideIn 0.3s ease-out; }
+        .typing-dot { animation: typing 1.4s infinite ease-in-out both; }
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes typing { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .modal-anim { animation: slideUp 0.3s ease-out; }
     </style>
 
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script>
-        tailwind.config = {
-            theme: { extend: { colors: { rose: { 500: '#f43f5e', 600: '#e11d48', 900: '#881337' } } } }
-        }
+        tailwind.config = { theme: { extend: { colors: { rose: { 500: '#f43f5e', 600: '#e11d48', 900: '#881337' } } } } }
     </script>
 </head>
 <body>
 
-    <!-- SPLASH SCREEN -->
     <div id="loader" class="app-loader">
         <div class="pulse-ring"></div>
         <div class="loader-logo">KGS</div>
-        <div style="margin-top: 20px; color: #666; font-size: 10px; letter-spacing: 2px;">INITIALISATION DU SYSTÈME</div>
+        <div style="margin-top: 20px; color: #666; font-size: 10px; letter-spacing: 2px;">CONNEXION NEXUS...</div>
     </div>
 
     <div id="root"></div>
@@ -64,10 +56,10 @@
         import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, doc, setDoc, getDocs, updateDoc, arrayUnion, getDoc, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { Send, Shield, LogOut, EyeOff, MessageCircle, Heart, Mic, Trash2, Plus, ArrowRight, Copy, Hash, Users, Crown, Activity, Server, Eye, LockKeyhole, Bomb, AlertTriangle, Reply, X, UserMinus, Ban, Wifi, WifiOff, Zap } from 'https://esm.sh/lucide-react@0.344.0';
+        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, doc, setDoc, getDocs, updateDoc, arrayUnion, arrayRemove, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { Send, Shield, LogOut, EyeOff, MessageCircle, Heart, Mic, Trash2, Plus, ArrowRight, Copy, Hash, Users, Crown, Activity, Server, Eye, LockKeyhole, Bomb, AlertTriangle, Reply, X, UserMinus, Ban, Wifi, WifiOff, Phone, Share2, Unlock, Settings, Power } from 'https://esm.sh/lucide-react@0.344.0';
 
-        // --- CONFIGURATION FIREBASE ---
+        // CONFIGURATION
         const firebaseConfig = {
             apiKey: "AIzaSyBQYoOdP2D0detYEtlpspZrizrXRDHQerg",
             authDomain: "kgs-c6e96.firebaseapp.com",
@@ -77,40 +69,43 @@
             appId: "1:135233323872:web:1bdb1794a3d34d72839405"
         };
 
-        const COLLECTION_ROOMS = 'kgs_prod_rooms';
-        const COLLECTION_USERS = 'kgs_prod_users';
+        const ROOMS_COL = 'kgs_nexus_rooms';
+        const USERS_COL = 'kgs_nexus_users';
 
-        // Init Firebase
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const appId = firebaseConfig.projectId;
-
-        // Fonction helper pour vibrer
-        const vibrate = (ms = 10) => {
-            if (navigator.vibrate) navigator.vibrate(ms);
-        };
+        let app, auth, db, appId;
+        try {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+            appId = firebaseConfig.projectId;
+        } catch (e) { console.error(e); }
 
         function KGSApp() {
-            // SYSTEM
-            const [isOnline, setIsOnline] = useState(navigator.onLine);
+            // STATES
             const [user, setUser] = useState(null);
             const [username, setUsername] = useState('');
-            const [view, setView] = useState('login'); // login, dashboard, chat
-            const [toast, setToast] = useState(null); // { msg, type }
-
-            // DATA
+            const [view, setView] = useState('loading'); // loading, login, dashboard, chat
+            const [toast, setToast] = useState(null);
+            
+            // ROOMS
             const [currentRoom, setCurrentRoom] = useState(null);
             const [roomData, setRoomData] = useState(null);
-            const [messages, setMessages] = useState([]);
+            const [roomInput, setRoomInput] = useState('');
+            const [passwordInput, setPasswordInput] = useState('');
+            const [showPwdModal, setShowPwdModal] = useState(false);
+            const [pendingRoom, setPendingRoom] = useState(null); // Room waiting for password
             
-            // CHAT INPUTS
-            const [inputRoom, setInputRoom] = useState('');
+            // CREATE ROOM OPTIONS
+            const [createOptions, setCreateOptions] = useState({ locked: false, password: '' });
+            const [showCreateModal, setShowCreateModal] = useState(false);
+
+            // CHAT
+            const [messages, setMessages] = useState([]);
             const [inputText, setInputText] = useState('');
             const [replyTo, setReplyTo] = useState(null);
             const [isRec, setIsRec] = useState(false);
-            const [recTime, setRecTime] = useState(0);
-
+            const [typingUsers, setTypingUsers] = useState([]);
+            
             // ADMIN
             const [isAdmin, setIsAdmin] = useState(false);
             const [adminStats, setAdminStats] = useState({ users: 0, rooms: 0 });
@@ -120,84 +115,91 @@
             const scrollRef = useRef();
             const mediaRef = useRef();
             const chunksRef = useRef([]);
-            const timerRef = useRef();
+            const typingTimeoutRef = useRef();
 
-            // 1. GESTION CONNEXION ET AUTH
+            // INIT
             useEffect(() => {
-                // Gestionnaire Online/Offline
-                const handleOnline = () => setIsOnline(true);
-                const handleOffline = () => setIsOnline(false);
-                window.addEventListener('online', handleOnline);
-                window.addEventListener('offline', handleOffline);
-
-                // Masquer loader
-                setTimeout(() => document.getElementById('loader').style.display = 'none', 1500);
-
-                // Auth Listener
+                setTimeout(() => document.getElementById('loader').style.display = 'none', 1000);
+                
                 const unsub = onAuthStateChanged(auth, (u) => {
                     if (u) {
                         setUser(u);
                         const saved = localStorage.getItem('kgs_username');
                         if (saved) {
                             setUsername(saved);
-                            if(saved === 'Whinsklay') setIsAdmin(true);
-                            setView('dashboard');
+                            if (saved === 'Whinsklay') setIsAdmin(true);
+                            
+                            // Check URL params for quick join
+                            const urlParams = new URLSearchParams(window.location.search);
+                            const roomParam = urlParams.get('room');
+                            if (roomParam) {
+                                handleJoinRequest(roomParam);
+                                // Clean URL
+                                window.history.replaceState({}, document.title, window.location.pathname);
+                            } else {
+                                setView('dashboard');
+                            }
                         } else {
                             setView('login');
                         }
                     } else {
-                        signInAnonymously(auth).catch(e => showToast("Erreur connexion Firebase", "error"));
+                        signInAnonymously(auth);
                     }
                 });
-
-                return () => {
-                    window.removeEventListener('online', handleOnline);
-                    window.removeEventListener('offline', handleOffline);
-                    unsub();
-                };
+                return () => unsub();
             }, []);
 
-            // 2. LOGIQUE TOAST
-            const showToast = (msg, type = 'info') => {
-                setToast({ msg, type });
-                setTimeout(() => setToast(null), 3000);
-            };
-
-            // 3. ECOUTE SALON
+            // ROOM LISTENER & TYPING
             useEffect(() => {
-                if (!currentRoom || !user) return;
+                if (!currentRoom) return;
 
-                const q = collection(db, 'artifacts', appId, 'public', 'data', COLLECTION_ROOMS, currentRoom, 'msgs');
-                const unsubMsg = onSnapshot(q, (snap) => {
-                    const msgs = snap.docs.map(d => ({id: d.id, ...d.data()}))
-                        .sort((a,b) => (a.time?.toMillis() || 0) - (b.time?.toMillis() || 0));
-                    setMessages(msgs.slice(-50)); // Garde les 50 derniers pour performance
+                // Listen to Messages
+                const qMsg = collection(db, 'artifacts', appId, 'public', 'data', ROOMS_COL, currentRoom, 'msgs');
+                const unsubMsg = onSnapshot(qMsg, (snap) => {
+                    const msgs = snap.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => (a.time?.toMillis() || 0) - (b.time?.toMillis() || 0));
+                    setMessages(msgs.slice(-50));
                     setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
                 });
 
-                const unsubRoom = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', COLLECTION_ROOMS, currentRoom), (snap) => {
+                // Listen to Room Data (Typing, Active, Banned)
+                const unsubRoom = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', ROOMS_COL, currentRoom), (snap) => {
                     if (snap.exists()) {
                         const d = snap.data();
                         setRoomData(d);
-                        if (d.banned?.includes(user.uid) && !isAdmin) {
+                        
+                        // Handle Ban
+                        if (d.banned?.includes(user?.uid) && !isAdmin) {
                             alert("Vous avez été banni.");
                             leaveRoom();
                         }
+
+                        // Handle Typing
+                        if (d.typing) {
+                            const now = Date.now();
+                            // Filter users who typed in last 3 seconds and are not me
+                            const activeTypers = Object.entries(d.typing)
+                                .filter(([uid, ts]) => uid !== user?.uid && now - ts < 3000)
+                                .map(([uid]) => d.userNames?.[uid] || "Quelqu'un");
+                            setTypingUsers(activeTypers);
+                        }
                     } else {
-                        // Si le salon n'existe pas
-                        if (!isAdmin) leaveRoom(); 
+                        // Room deleted
+                        if (view === 'chat') {
+                            alert("Ce salon a été supprimé par son créateur.");
+                            leaveRoom();
+                        }
                     }
                 });
 
                 return () => { unsubMsg(); unsubRoom(); };
             }, [currentRoom]);
 
-            // 4. ADMIN LOOP
+            // ADMIN STATS
             useEffect(() => {
                 if (isAdmin && view === 'dashboard') {
                     const fetch = async () => {
-                        const r = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', COLLECTION_ROOMS));
-                        const u = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', COLLECTION_USERS));
+                        const r = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', ROOMS_COL));
+                        const u = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', USERS_COL));
                         setAdminStats({ rooms: r.size, users: u.size });
                         setAdminRooms(r.docs.map(d => ({id: d.id, ...d.data()})));
                     };
@@ -207,153 +209,174 @@
                 }
             }, [isAdmin, view]);
 
-            // ACTIONS
+            // --- CORE FUNCTIONS ---
+
+            const showToast = (msg, type='info') => {
+                setToast({msg, type}); setTimeout(() => setToast(null), 3000);
+            };
 
             const doLogin = (e) => {
                 e.preventDefault();
-                if (!username.trim()) return;
-                const name = username.trim().toUpperCase();
-                localStorage.setItem('kgs_username', name);
-                setUsername(name);
-                if (name === 'WHINSKLAY') setIsAdmin(true);
-                
-                // Enregistrer user en base pour stats
-                setDoc(doc(db, 'artifacts', appId, 'public', 'data', COLLECTION_USERS, user.uid), {
-                    name: name,
-                    lastSeen: serverTimestamp()
-                });
-                
+                if(!username.trim()) return;
+                const n = username.trim();
+                localStorage.setItem('kgs_username', n);
+                setUsername(n);
+                if (n === 'Whinsklay') setIsAdmin(true);
+                setDoc(doc(db, 'artifacts', appId, 'public', 'data', USERS_COL, user.uid), { name: n, lastSeen: serverTimestamp() });
                 setView('dashboard');
-                vibrate(20);
             };
 
-            const createRoom = async () => {
-                if (!isOnline) return showToast("Pas de connexion internet", "error");
-                vibrate(20);
-                const code = "KGS-" + Math.floor(1000 + Math.random() * 9000); // Code plus simple à 4 chiffres
+            // CREATE ROOM
+            const handleCreateRoom = async () => {
+                const code = "KGS-" + Math.floor(1000 + Math.random() * 9000);
                 try {
-                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', COLLECTION_ROOMS, code), {
+                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', ROOMS_COL, code), {
                         creator: username,
                         creatorId: user.uid,
                         created: serverTimestamp(),
                         users: [username],
-                        banned: []
+                        userNames: { [user.uid]: username },
+                        banned: [],
+                        locked: createOptions.locked,
+                        password: createOptions.password,
+                        active: true,
+                        typing: {}
                     });
-                    joinRoom(code);
+                    
+                    // Add Welcome Msg
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', ROOMS_COL, code, 'msgs'), {
+                        text: createOptions.locked ? `🔒 Salon Privé créé par ${username}` : `Salon Ouvert créé par ${username}`,
+                        sys: true, time: serverTimestamp()
+                    });
+
+                    setCurrentRoom(code);
+                    setView('chat');
+                    setShowCreateModal(false);
                 } catch (e) { showToast("Erreur création", "error"); }
             };
 
-            const joinRoom = async (codeStr) => {
-                if (!isOnline) return showToast("Pas de connexion internet", "error");
-                vibrate(20);
+            // JOIN LOGIC
+            const handleJoinRequest = async (codeStr) => {
                 const code = codeStr.trim().toUpperCase();
-                
-                // Vérification existence
-                const ref = doc(db, 'artifacts', appId, 'public', 'data', COLLECTION_ROOMS, code);
-                const snap = await getDoc(ref);
-                
-                if (!snap.exists() && !isAdmin) return showToast("Salon introuvable", "error");
-                
-                if (snap.exists()) {
-                    const d = snap.data();
-                    if (d.banned?.includes(user.uid) && !isAdmin) return showToast("Accès refusé (Banni)", "error");
-                }
+                if (code.length < 3) return;
 
-                // Rejoindre
+                const ref = doc(db, 'artifacts', appId, 'public', 'data', ROOMS_COL, code);
+                const snap = await getDoc(ref);
+
+                if (!snap.exists()) return showToast("Salon introuvable", "error");
+                
+                const d = snap.data();
+                if (d.banned?.includes(user.uid) && !isAdmin) return showToast("Banni de ce salon", "error");
+
+                // Check Lock
+                if (d.locked && d.creatorId !== user.uid && !isAdmin) {
+                    setPendingRoom(code);
+                    setShowPwdModal(true);
+                } else {
+                    enterRoom(code);
+                }
+            };
+
+            const verifyPassword = async () => {
+                const ref = doc(db, 'artifacts', appId, 'public', 'data', ROOMS_COL, pendingRoom);
+                const snap = await getDoc(ref);
+                if (snap.data().password === passwordInput) {
+                    enterRoom(pendingRoom);
+                    setShowPwdModal(false);
+                    setPasswordInput('');
+                } else {
+                    showToast("Mot de passe incorrect", "error");
+                }
+            };
+
+            const enterRoom = async (code) => {
                 if (!isAdmin) {
-                    updateDoc(ref, { users: arrayUnion(username) }).catch(() => {});
-                    addDoc(collection(db, 'artifacts', appId, 'public', 'data', COLLECTION_ROOMS, code, 'msgs'), {
-                        text: `${username} a rejoint.`, sys: true, time: serverTimestamp()
+                    const ref = doc(db, 'artifacts', appId, 'public', 'data', ROOMS_COL, code);
+                    await updateDoc(ref, { 
+                        users: arrayUnion(username),
+                        [`userNames.${user.uid}`]: username 
+                    });
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', ROOMS_COL, code, 'msgs'), {
+                        text: `${username} a rejoint le salon.`, sys: true, time: serverTimestamp()
                     });
                 }
-                
                 setCurrentRoom(code);
                 setView('chat');
-                showToast(`Connecté à ${code}`, "success");
             };
 
             const leaveRoom = () => {
-                setCurrentRoom(null);
-                setMessages([]);
-                setView('dashboard');
-                vibrate(20);
+                setCurrentRoom(null); setMessages([]); setView('dashboard');
+            };
+
+            const deleteRoom = async () => {
+                if (!confirm("Voulez-vous vraiment SUPPRIMER ce salon pour tous ?")) return;
+                try {
+                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', ROOMS_COL, currentRoom));
+                    leaveRoom();
+                } catch(e) { showToast("Erreur suppression", "error"); }
+            };
+
+            // CHAT FUNCTIONS
+            const handleTyping = (e) => {
+                setInputText(e.target.value);
+                
+                // Update typing status
+                if (currentRoom) {
+                    const ref = doc(db, 'artifacts', appId, 'public', 'data', ROOMS_COL, currentRoom);
+                    updateDoc(ref, { [`typing.${user.uid}`]: Date.now() });
+                    
+                    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+                    typingTimeoutRef.current = setTimeout(() => {
+                        // We can't delete keys easily in Firestore without 'FieldValue.delete()', 
+                        // but our listener filters old timestamps so it's fine.
+                    }, 1000);
+                }
             };
 
             const sendMsg = async (txt, audio) => {
-                if (!isOnline) return showToast("Hors ligne", "error");
-                vibrate(10);
-                
                 const payload = {
-                    sender: username,
-                    uid: user.uid,
-                    text: audio ? "Vocal" : txt,
-                    audio: audio || null,
-                    type: audio ? 'audio' : 'text',
-                    time: serverTimestamp(),
-                    listened: [],
+                    sender: username, uid: user.uid,
+                    text: audio ? "Vocal" : txt, audio: audio || null, type: audio ? 'audio' : 'text',
+                    time: serverTimestamp(), listened: [],
                     reply: replyTo ? { sender: replyTo.sender, text: replyTo.text } : null
                 };
-
-                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', COLLECTION_ROOMS, currentRoom, 'msgs'), payload);
-                setInputText('');
-                setReplyTo(null);
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', ROOMS_COL, currentRoom, 'msgs'), payload);
+                setInputText(''); setReplyTo(null);
             };
 
-            // AUDIO
-            const startRec = async () => {
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    mediaRef.current = new MediaRecorder(stream);
-                    chunksRef.current = [];
-                    mediaRef.current.ondataavailable = e => chunksRef.current.push(e.data);
-                    mediaRef.current.onstop = () => {
-                        const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
-                        const reader = new FileReader();
-                        reader.readAsDataURL(blob);
-                        reader.onloadend = () => sendMsg(null, reader.result);
-                        stream.getTracks().forEach(t => t.stop());
-                    };
-                    mediaRef.current.start();
-                    setIsRec(true); setRecTime(0);
-                    vibrate(50);
-                    timerRef.current = setInterval(() => setRecTime(t => { 
-                        if(t >= 15) stopRec(); 
-                        return t+1; 
-                    }), 1000);
-                } catch(e) { showToast("Micro bloqué", "error"); }
-            };
-            const stopRec = () => { if(mediaRef.current && isRec) { mediaRef.current.stop(); clearInterval(timerRef.current); setIsRec(false); vibrate(20); } };
-
-            const kick = async (uid, name) => {
-                if (!confirm(`Bannir ${name} ?`)) return;
-                const ref = doc(db, 'artifacts', appId, 'public', 'data', COLLECTION_ROOMS, currentRoom);
-                await updateDoc(ref, { banned: arrayUnion(uid), users: roomData.users.filter(n => n !== name) }); // Optimiste sur nom
-                addDoc(collection(db, 'artifacts', appId, 'public', 'data', COLLECTION_ROOMS, currentRoom, 'msgs'), {
-                    text: `${name} a été expulsé.`, sys: true, time: serverTimestamp()
-                });
+            const startCall = () => {
+                // Generate Jitsi Link
+                const link = `https://meet.jit.si/KGS-SECURE-${currentRoom}-${appId.substr(0,5)}`;
+                if (confirm("Démarrer un appel de groupe sécurisé ?")) {
+                    window.open(link, '_blank');
+                    sendMsg(`📞 A démarré un appel de groupe.`, null);
+                }
             };
 
-            // RENDERERS
+            const shareLink = () => {
+                const url = window.location.href.split('?')[0] + '?room=' + currentRoom;
+                if (navigator.share) {
+                    navigator.share({ title: 'Rejoins-moi sur KGS', text: 'Code: ' + currentRoom, url: url });
+                } else {
+                    navigator.clipboard.writeText(url);
+                    showToast("Lien copié !");
+                }
+            };
+
+            // UI HELPERS
+            const isCreator = roomData?.creatorId === user?.uid;
+
+            // --- VIEWS ---
+
             if (view === 'login') return (
                 <div className="h-screen flex flex-col items-center justify-center p-6 bg-black">
                     <div className="w-full max-w-sm glass p-8 rounded-3xl text-center border-rose-900/50">
-                        <div className="mx-auto w-20 h-20 rounded-full glass-rose flex items-center justify-center text-rose-500 mb-6 shadow-[0_0_20px_rgba(244,63,94,0.3)]">
-                            <Shield size={40} />
-                        </div>
-                        <h1 className="text-3xl font-black text-rose-500 mb-2 tracking-tighter">KGS ULTIMATE</h1>
-                        <p className="text-gray-500 text-xs mb-8 uppercase tracking-widest">Réseau Crypté v6</p>
-                        
+                        <div className="mx-auto w-20 h-20 rounded-full glass-rose flex items-center justify-center text-rose-500 mb-6 shadow-[0_0_20px_rgba(244,63,94,0.3)]"><Shield size={40} /></div>
+                        <h1 className="text-3xl font-black text-rose-500 mb-1 tracking-tighter">KGS NEXUS</h1>
+                        <p className="text-gray-500 text-xs mb-8 uppercase tracking-widest">v7.0 Secure</p>
                         <form onSubmit={doLogin} className="space-y-4">
-                            <input 
-                                type="text" 
-                                value={username}
-                                onChange={e => setUsername(e.target.value.toUpperCase())}
-                                placeholder="NOM DE CODE" 
-                                className="w-full bg-black/50 border border-gray-800 rounded-xl px-4 py-4 text-center font-bold text-white focus:border-rose-600 outline-none transition-all placeholder-gray-700"
-                            />
-                            <button className="w-full bg-rose-600 hover:bg-rose-500 text-white font-bold py-4 rounded-xl transition-all shadow-[0_0_15px_rgba(225,29,72,0.4)] flex items-center justify-center gap-2">
-                                <Zap size={18} fill="currentColor" /> INITIALISER
-                            </button>
+                            <input type="text" value={username} onChange={e => setUsername(e.target.value)} placeholder="IDENTIFIANT" className="w-full bg-black/50 border border-gray-800 rounded-xl px-4 py-4 text-center font-bold text-white focus:border-rose-600 outline-none transition-all placeholder-gray-700"/>
+                            <button className="w-full bg-rose-600 hover:bg-rose-500 text-white font-bold py-4 rounded-xl shadow-[0_0_15px_rgba(225,29,72,0.4)]">CONNEXION</button>
                         </form>
                     </div>
                 </div>
@@ -363,200 +386,180 @@
                 <div className="h-screen flex flex-col bg-black">
                     {/* Header */}
                     <div className="p-4 flex justify-between items-center glass border-b border-gray-800">
-                        <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-lg bg-rose-600 flex items-center justify-center font-bold">K</div>
-                            <span className="font-bold text-rose-500">KGS</span>
-                        </div>
-                        <div className="flex items-center gap-4">
-                            <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500 shadow-[0_0_10px_lime]' : 'bg-red-500'}`}></div>
-                            <button onClick={() => { localStorage.clear(); window.location.reload(); }}><LogOut size={20} className="text-gray-500"/></button>
+                        <div className="font-black text-xl text-rose-500 tracking-tighter">KGS</div>
+                        <div className="flex items-center gap-3">
+                            <div className="text-right">
+                                <div className="text-xs font-bold text-white">{username}</div>
+                                <div className="text-[9px] text-green-500">EN LIGNE</div>
+                            </div>
+                            <button onClick={() => { localStorage.clear(); window.location.reload(); }}><LogOut size={18} className="text-gray-500"/></button>
                         </div>
                     </div>
 
-                    {/* Content */}
                     <div className="flex-1 p-6 flex flex-col gap-6 overflow-y-auto">
-                        {!isOnline && <div className="bg-red-900/30 border border-red-800 p-3 rounded-xl text-red-400 text-center text-xs font-bold flex items-center justify-center gap-2"><WifiOff size={14}/> HORS LIGNE</div>}
-
+                        {/* Admin Panel */}
                         {isAdmin && (
                             <div className="glass p-4 rounded-2xl border-yellow-900/30">
-                                <h3 className="text-yellow-500 font-bold mb-4 flex items-center gap-2"><Crown size={16}/> SUPER ADMIN</h3>
+                                <h3 className="text-yellow-500 font-bold mb-4 flex items-center gap-2 text-sm"><Crown size={14}/> ADMIN NEXUS</h3>
                                 <div className="grid grid-cols-2 gap-2 mb-4">
-                                    <div className="bg-gray-900/50 p-3 rounded-xl text-center"><div className="text-2xl font-bold">{adminStats.users}</div><div className="text-[10px] text-gray-500">AGENTS</div></div>
-                                    <div className="bg-gray-900/50 p-3 rounded-xl text-center"><div className="text-2xl font-bold">{adminStats.rooms}</div><div className="text-[10px] text-gray-500">CANAUX</div></div>
+                                    <div className="bg-gray-900/50 p-2 rounded text-center"><div className="text-xl font-bold">{adminStats.users}</div><div className="text-[10px] text-gray-500">AGENTS</div></div>
+                                    <div className="bg-gray-900/50 p-2 rounded text-center"><div className="text-xl font-bold">{adminStats.rooms}</div><div className="text-[10px] text-gray-500">SALONS</div></div>
                                 </div>
-                                <div className="space-y-2 max-h-40 overflow-y-auto">
+                                <div className="space-y-1 max-h-32 overflow-y-auto">
                                     {adminRooms.map(r => (
                                         <div key={r.id} className="flex justify-between items-center bg-gray-900 p-2 rounded text-xs text-gray-400">
-                                            <span>{r.id}</span>
-                                            <button onClick={() => joinRoom(r.id)}><Eye size={14}/></button>
+                                            <span>{r.id} {r.locked && '🔒'}</span>
+                                            <button onClick={() => handleJoinRequest(r.id)}><Eye size={12}/></button>
                                         </div>
                                     ))}
                                 </div>
                             </div>
                         )}
 
-                        <div className="text-center my-4">
-                            <div className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-rose-400 to-purple-600 mb-1">{username}</div>
-                            <div className="text-xs text-gray-600 tracking-widest">AGENT CONFIRMÉ</div>
-                        </div>
-
-                        <button onClick={createRoom} className="w-full py-6 rounded-2xl bg-gradient-to-r from-gray-900 to-gray-800 border border-gray-700 hover:border-rose-500 transition-all group relative overflow-hidden">
+                        {/* Actions */}
+                        <button onClick={() => setShowCreateModal(true)} className="w-full py-5 rounded-2xl bg-gradient-to-r from-gray-900 to-gray-800 border border-gray-700 hover:border-rose-500 flex flex-col items-center gap-1 group relative overflow-hidden">
                             <div className="absolute inset-0 bg-rose-600/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                            <div className="flex flex-col items-center gap-2 relative z-10">
-                                <Plus size={32} className="text-rose-500" />
-                                <span className="font-bold text-white">CRÉER UN SALON</span>
-                            </div>
+                            <Plus size={28} className="text-rose-500 relative z-10" />
+                            <span className="font-bold text-white text-sm relative z-10">CRÉER UN SALON</span>
                         </button>
 
-                        <div className="glass p-1 rounded-2xl flex items-center">
-                            <input 
-                                type="text" 
-                                value={inputRoom}
-                                onChange={e => setInputRoom(e.target.value.toUpperCase())}
-                                placeholder="CODE DU SALON"
-                                className="bg-transparent flex-1 px-4 py-3 outline-none font-mono text-center font-bold placeholder-gray-700"
-                            />
-                            <button onClick={() => joinRoom(inputRoom)} className="bg-white text-black font-bold px-6 py-3 rounded-xl hover:bg-gray-200">
-                                GO
-                            </button>
+                        <div className="glass p-1 rounded-2xl flex items-center mt-2">
+                            <input type="text" value={roomInput} onChange={e => setRoomInput(e.target.value.toUpperCase())} placeholder="CODE SALON" className="bg-transparent flex-1 px-4 py-3 outline-none font-mono text-center font-bold placeholder-gray-700 text-sm"/>
+                            <button onClick={() => handleJoinRequest(roomInput)} className="bg-white text-black font-bold px-5 py-3 rounded-xl text-sm">GO</button>
                         </div>
                     </div>
+
+                    {/* Modal Create */}
+                    {showCreateModal && (
+                        <div className="fixed inset-0 bg-black/90 z-50 flex items-end sm:items-center justify-center p-4 backdrop-blur-sm">
+                            <div className="bg-gray-900 w-full max-w-sm rounded-3xl p-6 border border-gray-800 modal-anim">
+                                <div className="flex justify-between mb-6"><h3 className="font-bold text-lg">Nouveau Salon</h3><button onClick={() => setShowCreateModal(false)}><X/></button></div>
+                                
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between p-3 bg-black rounded-xl">
+                                        <div className="flex items-center gap-3">
+                                            {createOptions.locked ? <LockKeyhole size={20} className="text-rose-500"/> : <Unlock size={20} className="text-green-500"/>}
+                                            <div className="text-sm font-bold">{createOptions.locked ? 'Privé (Verrouillé)' : 'Public (Ouvert)'}</div>
+                                        </div>
+                                        <input type="checkbox" checked={createOptions.locked} onChange={e => setCreateOptions({...createOptions, locked: e.target.checked})} className="w-5 h-5 accent-rose-500"/>
+                                    </div>
+
+                                    {createOptions.locked && (
+                                        <input type="text" placeholder="Définir un mot de passe" value={createOptions.password} onChange={e => setCreateOptions({...createOptions, password: e.target.value})} className="w-full bg-black border border-gray-700 rounded-xl p-3 text-white outline-none"/>
+                                    )}
+
+                                    <button onClick={handleCreateRoom} className="w-full bg-rose-600 font-bold py-3 rounded-xl mt-2">LANCER LE SALON</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Modal Password */}
+                    {showPwdModal && (
+                        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-6">
+                            <div className="bg-gray-900 w-full max-w-xs rounded-2xl p-6 border border-rose-500/50 text-center">
+                                <LockKeyhole size={32} className="mx-auto text-rose-500 mb-4"/>
+                                <h3 className="font-bold mb-4">Salon Verrouillé</h3>
+                                <input type="password" placeholder="Mot de passe" value={passwordInput} onChange={e => setPasswordInput(e.target.value)} className="w-full bg-black border border-gray-700 rounded-lg p-3 mb-4 text-center text-white outline-none"/>
+                                <div className="flex gap-2">
+                                    <button onClick={() => setShowPwdModal(false)} className="flex-1 bg-gray-800 py-2 rounded-lg font-bold">Annuler</button>
+                                    <button onClick={verifyPassword} className="flex-1 bg-rose-600 py-2 rounded-lg font-bold">Entrer</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             );
 
-            // CHAT VIEW
-            return (
+            if (view === 'chat') return (
                 <div className="h-screen flex flex-col bg-black">
-                    {/* Toast Notification */}
-                    {toast && (
-                        <div className={`toast fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full text-xs font-bold shadow-lg ${toast.type === 'error' ? 'bg-red-500 text-white' : 'bg-green-500 text-black'}`}>
-                            {toast.msg}
-                        </div>
-                    )}
+                    {toast && <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full text-xs font-bold shadow-lg ${toast.type === 'error' ? 'bg-red-500 text-white' : 'bg-green-500 text-black'}`}>{toast.msg}</div>}
 
-                    {/* Members Modal */}
-                    {showMembers && (
-                        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-6 backdrop-blur-sm">
-                            <div className="glass w-full max-w-sm rounded-3xl p-6">
-                                <div className="flex justify-between items-center mb-6">
-                                    <h3 className="font-bold text-lg flex items-center gap-2"><Users className="text-rose-500"/> Membres</h3>
-                                    <button onClick={() => setShowMembers(false)}><X/></button>
-                                </div>
-                                <div className="space-y-3">
-                                    {roomData?.users?.map((u, i) => (
-                                        <div key={i} className="flex justify-between items-center bg-gray-900/50 p-3 rounded-xl">
-                                            <span className="font-bold">{u} {u === roomData.creator && <Crown size={12} className="inline text-yellow-500"/>}</span>
-                                            {(roomData.creatorId === user.uid || isAdmin) && u !== username && (
-                                                <button onClick={() => kick(u /* Idéalement UID */, u)} className="text-red-500 bg-red-900/20 p-2 rounded-lg"><UserMinus size={16}/></button>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Chat Header */}
+                    {/* Header */}
                     <div className="p-3 glass border-b border-gray-800 flex justify-between items-center z-10">
                         <div className="flex items-center gap-3">
-                            <button onClick={leaveRoom} className="p-2 bg-gray-900 rounded-full text-gray-400 hover:text-white"><ArrowRight size={18} className="rotate-180"/></button>
-                            <div onClick={() => {navigator.clipboard.writeText(currentRoom); showToast("Code copié !");}}>
+                            <button onClick={leaveRoom} className="p-2 bg-gray-900 rounded-full text-gray-400"><ArrowRight size={18} className="rotate-180"/></button>
+                            <div>
                                 <div className="font-mono font-bold text-lg leading-none flex items-center gap-2">
-                                    {currentRoom} <Copy size={12} className="text-rose-500"/>
+                                    {currentRoom} {roomData?.locked && <LockKeyhole size={12} className="text-rose-500"/>}
                                 </div>
                                 <div className="text-[9px] text-green-500 font-bold flex items-center gap-1 mt-1">
-                                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span> CANAL SÉCURISÉ
+                                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span> {roomData?.users?.length || 1} EN LIGNE
                                 </div>
                             </div>
                         </div>
-                        <button onClick={() => setShowMembers(true)} className="p-2 bg-gray-900 rounded-full text-rose-500"><Users size={18}/></button>
+                        <div className="flex gap-2">
+                            <button onClick={startCall} className="p-2 bg-green-900/30 text-green-500 rounded-full border border-green-900"><Phone size={18}/></button>
+                            <button onClick={shareLink} className="p-2 bg-blue-900/30 text-blue-500 rounded-full border border-blue-900"><Share2 size={18}/></button>
+                            <button onClick={() => setShowMembers(true)} className="p-2 bg-gray-900 rounded-full text-gray-400"><Users size={18}/></button>
+                        </div>
                     </div>
 
-                    {/* Chat Messages */}
+                    {/* Chat Area */}
                     <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-black to-gray-900">
-                        <div className="text-center py-8 opacity-30">
-                            <LockKeyhole size={32} className="mx-auto mb-2"/>
-                            <p className="text-xs uppercase tracking-widest">Cryptage de bout en bout</p>
-                        </div>
-                        
                         {messages.map(m => {
-                            const isMe = m.sender === username; // Simple check par nom pour cette version simplifiée
+                            const isMe = m.uid === user.uid;
                             if (m.sys) return <div key={m.id} className="text-center text-[10px] text-gray-500 font-mono my-2">- {m.text} -</div>;
-                            
                             return (
-                                <div key={m.id} className={`flex w-full ${isMe ? 'justify-end' : 'justify-start'} group`}>
+                                <div key={m.id} className={`flex w-full ${isMe ? 'justify-end' : 'justify-start'}`}>
                                     <div className={`max-w-[85%] flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
                                         <div className="flex items-center gap-2 mb-1 px-1">
                                             <span className={`text-[9px] font-bold ${isMe ? 'text-rose-500' : 'text-gray-500'}`}>{m.sender}</span>
-                                            {!isAdmin && !isMe && <button onClick={() => setReplyTo(m)} className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-500"><Reply size={12}/></button>}
+                                            {!isMe && <button onClick={() => setReplyTo(m)} className="text-gray-600"><Reply size={10}/></button>}
                                         </div>
-                                        
-                                        <div className={`relative px-4 py-3 rounded-2xl text-sm break-words shadow-lg ${isMe ? 'bg-rose-600 text-white rounded-tr-none' : 'bg-gray-800 text-gray-200 rounded-tl-none'}`}>
-                                            {m.reply && (
-                                                <div className="mb-2 pl-2 border-l-2 border-white/30 text-xs opacity-70">
-                                                    <span className="font-bold block">{m.reply.sender}</span>
-                                                    {m.reply.text}
-                                                </div>
-                                            )}
-                                            
-                                            {m.type === 'audio' ? (
-                                                m.listened.includes(user.uid) && !isAdmin ? 
-                                                <div className="flex items-center gap-2 text-xs italic opacity-70"><Bomb size={14}/> Message autodétruit</div> :
-                                                <div className="min-w-[180px]">
-                                                    <div className="flex items-center gap-2 mb-2 text-xs font-bold opacity-80"><Mic size={12}/> Audio Secret</div>
-                                                    <audio 
-                                                        controls 
-                                                        src={m.audio} 
-                                                        className="w-full h-8" 
-                                                        onEnded={() => {
-                                                            if(!isAdmin) updateDoc(doc(db, 'artifacts', appId, 'public', 'data', COLLECTION_ROOMS, currentRoom, 'msgs', m.id), {listened: arrayUnion(user.uid)});
-                                                        }}
-                                                    />
-                                                </div>
-                                            ) : m.text}
+                                        <div className={`relative px-4 py-2 rounded-2xl text-sm break-words shadow-lg ${isMe ? 'bg-rose-600 text-white rounded-tr-none' : 'bg-gray-800 text-gray-200 rounded-tl-none'}`}>
+                                            {m.reply && <div className="mb-2 pl-2 border-l-2 border-white/30 text-xs opacity-70"><span className="font-bold block">{m.reply.sender}</span>{m.reply.text}</div>}
+                                            {m.type === 'audio' ? <div className="min-w-[150px]"><div className="flex items-center gap-2 mb-1 text-xs font-bold opacity-80"><Mic size={12}/> Audio</div><audio controls src={m.audio} className="w-full h-8"/></div> : m.text}
                                         </div>
-                                        <span className="text-[9px] text-gray-600 mt-1">{m.time?.toMillis ? new Date(m.time.toMillis()).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '...'}</span>
+                                        <div className="text-[9px] text-gray-600 mt-1">{m.time?.toMillis ? new Date(m.time.toMillis()).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : ''}</div>
                                     </div>
                                 </div>
                             );
                         })}
+                        {/* Typing Indicator */}
+                        {typingUsers.length > 0 && (
+                            <div className="text-xs text-gray-500 ml-4 flex items-center gap-1">
+                                <span className="typing-dot w-1 h-1 bg-gray-500 rounded-full"></span>
+                                <span className="typing-dot w-1 h-1 bg-gray-500 rounded-full"></span>
+                                <span className="typing-dot w-1 h-1 bg-gray-500 rounded-full"></span>
+                                {typingUsers.join(', ')} écrit...
+                            </div>
+                        )}
                         <div ref={scrollRef}></div>
                     </div>
 
-                    {/* Chat Input */}
-                    {!isAdmin && (
-                        <div className="p-3 glass border-t border-gray-800">
-                            {replyTo && (
-                                <div className="flex justify-between items-center bg-gray-800 p-2 rounded-lg mb-2 text-xs border-l-2 border-rose-500">
-                                    <div><span className="text-rose-500 font-bold">{replyTo.sender}</span> : {replyTo.text.substring(0,30)}...</div>
-                                    <button onClick={() => setReplyTo(null)}><X size={14}/></button>
-                                </div>
-                            )}
-                            
-                            {isRec ? (
-                                <div className="flex items-center gap-2 animate-pulse">
-                                    <div className="flex-1 bg-rose-900/30 text-rose-500 font-mono font-bold p-3 rounded-xl border border-rose-900 flex items-center justify-center gap-2">
-                                        <div className="w-3 h-3 bg-rose-500 rounded-full"></div> {recTime}s
+                    {/* Input Area */}
+                    <div className="p-3 glass border-t border-gray-800">
+                        {replyTo && <div className="flex justify-between items-center bg-gray-800 p-2 rounded-lg mb-2 text-xs border-l-2 border-rose-500"><div>Rep à {replyTo.sender}</div><button onClick={() => setReplyTo(null)}><X size={14}/></button></div>}
+                        
+                        <form onSubmit={e => {e.preventDefault(); if(inputText.trim()) sendMsg(inputText);}} className="flex gap-2 items-center">
+                            <input type="text" value={inputText} onChange={handleTyping} placeholder="Message..." className="flex-1 bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-3 focus:border-rose-500 outline-none"/>
+                            {inputText.trim() ? <button className="p-3 bg-rose-600 rounded-xl text-white"><Send size={20}/></button> : <div className="p-3 bg-gray-800 rounded-xl text-gray-500"><Mic size={20}/></div>}
+                        </form>
+                    </div>
+
+                    {/* Members / Admin Modal */}
+                    {showMembers && (
+                        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-6 backdrop-blur-sm">
+                            <div className="glass w-full max-w-sm rounded-3xl p-6 border-gray-700">
+                                <div className="flex justify-between items-center mb-6"><h3 className="font-bold text-lg">Paramètres Salon</h3><button onClick={() => setShowMembers(false)}><X/></button></div>
+                                
+                                {(isCreator || isAdmin) && (
+                                    <div className="mb-6 p-4 bg-red-900/20 border border-red-900 rounded-xl">
+                                        <h4 className="text-red-500 font-bold text-xs uppercase mb-2">Zone Danger</h4>
+                                        <button onClick={deleteRoom} className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 py-2 rounded-lg text-sm font-bold"><Power size={16}/> SUPPRIMER LE SALON</button>
                                     </div>
-                                    <button onClick={() => {stopRec(); setIsRec(false);}} className="p-3 bg-rose-600 rounded-xl text-white"><Send size={20}/></button>
-                                    <button onClick={() => {mediaRef.current.stop(); setIsRec(false);}} className="p-3 bg-gray-800 rounded-xl text-white"><Trash2 size={20}/></button>
+                                )}
+
+                                <h4 className="text-gray-500 text-xs uppercase mb-2">Membres Actifs</h4>
+                                <div className="space-y-2 max-h-40 overflow-y-auto">
+                                    {roomData?.users?.map((u, i) => (
+                                        <div key={i} className="flex justify-between items-center bg-gray-900 p-2 rounded-lg">
+                                            <span className="text-sm font-bold">{u} {u === roomData.creator && '👑'}</span>
+                                        </div>
+                                    ))}
                                 </div>
-                            ) : (
-                                <form onSubmit={e => {e.preventDefault(); if(inputText.trim()) sendMsg(inputText);}} className="flex gap-2 items-center">
-                                    <input 
-                                        type="text" 
-                                        value={inputText} 
-                                        onChange={e => setInputText(e.target.value)} 
-                                        placeholder="Message crypté..."
-                                        className="flex-1 bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-3 focus:border-rose-500 outline-none"
-                                    />
-                                    {inputText.trim() ? (
-                                        <button className="p-3 bg-rose-600 rounded-xl text-white shadow-lg shadow-rose-900/50"><Send size={20}/></button>
-                                    ) : (
-                                        <button type="button" onClick={startRec} className="p-3 bg-gray-800 rounded-xl text-rose-500 hover:bg-gray-700"><Mic size={20}/></button>
-                                    )}
-                                </form>
-                            )}
+                            </div>
                         </div>
                     )}
                 </div>
