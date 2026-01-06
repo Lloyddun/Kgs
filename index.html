@@ -4,9 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>WAZE | Le Mapane Premium 241</title>
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;900&display=swap" rel="stylesheet">
-    <!-- Firebase SDK Modules -->
+    
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
@@ -21,43 +20,54 @@
             appId: "1:880209868778:web:2531beb85ba08432506493"
         };
 
+        // Initialisation
         const app = initializeApp(firebaseConfig);
-        const auth = getAuth();
-        const db = getFirestore();
+        const auth = getAuth(app);
+        const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
 
         let currentUserData = null;
         let localStream = null;
 
-        // Liaison des fonctions au scope global window pour les boutons HTML
-        window.loginWithGoogle = async () => {
-            try {
-                const result = await signInWithPopup(auth, provider);
-                await checkUser(result.user);
-            } catch (error) { 
-                console.error("Erreur Auth:", error);
-                alert("Erreur de connexion : " + error.message);
-            }
-        };
-
+        // Fonction de vérification utilisateur
         async function checkUser(user) {
             if (!user) return;
-            const docRef = doc(db, "users", user.uid);
-            const docSnap = await getDoc(docRef);
+            console.log("Vérification de l'utilisateur:", user.uid);
             
-            if (docSnap.exists()) {
-                currentUserData = docSnap.data();
-                showSelection();
-            } else {
-                // Animation de transition vers le formulaire
-                const loginBox = document.getElementById('login-box');
-                loginBox.classList.add('hide');
-                setTimeout(() => {
-                    loginBox.style.display = 'none';
+            try {
+                const docRef = doc(db, "users", user.uid);
+                const docSnap = await getDoc(docRef);
+                
+                if (docSnap.exists()) {
+                    currentUserData = docSnap.data();
+                    showSelection();
+                } else {
+                    document.getElementById('login-box').style.display = 'none';
                     document.getElementById('register-form').style.display = 'flex';
-                }, 400);
+                }
+            } catch (error) {
+                console.error("Erreur Firestore:", error);
             }
         }
+
+        function showSelection() {
+            document.getElementById('auth-screen').style.display = 'none';
+            document.getElementById('selection-screen').style.display = 'flex';
+        }
+
+        // --- ATTACHEMENT GLOBAL (INDISPENSABLE) ---
+        
+        window.loginWithGoogle = async () => {
+            console.log("Tentative de connexion...");
+            try {
+                const result = await signInWithPopup(auth, provider);
+                console.log("Connexion réussie");
+                await checkUser(result.user);
+            } catch (error) { 
+                console.error("Erreur Auth détaillée:", error);
+                alert("Erreur: " + error.message);
+            }
+        };
 
         window.finishRegistration = async () => {
             const user = auth.currentUser;
@@ -65,7 +75,7 @@
             const province = document.getElementById('reg-province').value;
             const gender = document.getElementById('reg-gender').value;
 
-            if (name && province && gender) {
+            if (name && province && gender && user) {
                 const data = { 
                     uid: user.uid, 
                     name, 
@@ -79,32 +89,23 @@
                     currentUserData = data;
                     showSelection();
                 } catch (e) {
-                    alert("Erreur lors de l'enregistrement : " + e.message);
+                    alert("Erreur enregistrement: " + e.message);
                 }
             } else {
-                alert("Veuillez remplir tous les champs.");
+                alert("Remplis tous les champs, champion !");
             }
         };
 
-        function showSelection() {
-            document.getElementById('auth-screen').style.display = 'none';
-            document.getElementById('selection-screen').style.display = 'flex';
-        }
-
         window.startChatMode = (mode) => {
-            document.getElementById('selection-screen').classList.add('fade-out');
-            setTimeout(() => {
-                document.getElementById('selection-screen').style.display = 'none';
-                document.getElementById('main-app').style.display = 'flex';
-                if(mode === 'video') {
-                    initCamera();
-                    document.getElementById('video-layout').style.display = 'block';
-                    document.getElementById('chat-area').classList.remove('full-mode');
-                } else {
-                    document.getElementById('video-layout').style.display = 'none';
-                    document.getElementById('chat-area').classList.add('full-mode');
-                }
-            }, 500);
+            document.getElementById('selection-screen').style.display = 'none';
+            document.getElementById('main-app').style.display = 'flex';
+            if(mode === 'video') {
+                initCamera();
+                document.getElementById('video-layout').style.display = 'block';
+            } else {
+                document.getElementById('video-layout').style.display = 'none';
+                document.getElementById('chat-area').classList.add('full-mode');
+            }
         };
 
         async function initCamera() {
@@ -112,27 +113,26 @@
                 localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
                 document.getElementById('localVideo').srcObject = localStream;
             } catch (e) { 
-                console.warn("Caméra indisponible ou bloquée.");
+                console.warn("Caméra bloquée");
             }
         }
 
         window.nextMapane = () => {
             const overlay = document.getElementById('matching-overlay');
-            overlay.classList.add('active');
+            overlay.style.display = 'flex';
             
             setTimeout(() => {
-                overlay.classList.remove('active');
-                const mockPartners = [
+                overlay.style.display = 'none';
+                const partners = [
                     { name: "Mavoungou", province: "Nyanga" },
                     { name: "Jessica", province: "Estuaire" },
-                    { name: "Ulrich", province: "Haut-Ogooué" }
+                    { name: "Arnaud", province: "Woleu-Ntem" }
                 ];
-                const partner = mockPartners[Math.floor(Math.random() * mockPartners.length)];
-                
-                document.getElementById('current-partner-name').innerText = partner.name;
-                document.getElementById('current-partner-loc').innerText = partner.province;
-                appendMessage("Système", `Connecté à ${partner.name} (${partner.province})`);
-            }, 1500);
+                const p = partners[Math.floor(Math.random() * partners.length)];
+                document.getElementById('current-partner-name').innerText = p.name;
+                document.getElementById('current-partner-loc').innerText = p.province;
+                appendMessage("Système", "Connecté à " + p.name);
+            }, 1200);
         };
 
         window.sendMessage = () => {
@@ -154,16 +154,17 @@
 
         window.logout = () => signOut(auth).then(() => location.reload());
 
-        // Listener d'état d'authentification au chargement
         onAuthStateChanged(auth, (user) => {
-            if (user) checkUser(user);
+            if (user) {
+                console.log("Session active détectée");
+                checkUser(user);
+            }
         });
     </script>
 
     <style>
         :root {
             --primary: #fbc02d;
-            --primary-dark: #c49000;
             --bg: #0a0a0a;
             --card: #161616;
             --border: rgba(255, 255, 255, 0.1);
@@ -175,244 +176,151 @@
         body, html { 
             margin: 0; padding: 0; 
             font-family: 'Outfit', sans-serif; 
-            background: var(--bg); 
-            color: var(--text); 
+            background: var(--bg); color: var(--text); 
             height: 100vh; overflow: hidden;
         }
 
-        /* --- AUTH SCREEN --- */
         .screen {
             position: fixed; inset: 0;
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
-            background: radial-gradient(circle at center, #1a1a1a 0%, #000 100%);
-            padding: 20px; z-index: 100;
-            transition: opacity 0.5s ease;
+            background: #000; padding: 20px; z-index: 100;
         }
 
         .auth-card {
             background: var(--card);
             padding: 40px; border-radius: 24px;
             width: 100%; max-width: 400px;
-            text-align: center;
-            border: 1px solid var(--border);
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-            transition: transform 0.4s ease, opacity 0.4s ease;
+            text-align: center; border: 1px solid var(--border);
         }
 
-        .logo-main { 
-            font-size: 4.5rem; font-weight: 900; 
-            color: var(--primary); margin: 0;
-            letter-spacing: -3px; line-height: 1;
-        }
-
-        .tagline { color: var(--text-dim); margin-bottom: 30px; font-weight: 300; }
-
-        /* --- BUTTONS --- */
-        .btn {
-            width: 100%; padding: 16px; border-radius: 14px;
-            border: none; font-weight: 600; font-size: 1rem;
-            cursor: pointer; transition: all 0.2s ease;
-            display: flex; align-items: center; justify-content: center; gap: 10px;
-        }
-
-        .btn-google { background: white; color: black; margin-bottom: 15px; }
-        .btn-google:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(255,255,255,0.1); }
-
-        .btn-primary { background: var(--primary); color: black; }
-        .btn-primary:active { transform: scale(0.98); }
-
-        .btn-outline { background: transparent; border: 1px solid var(--border); color: white; margin-top: 10px; }
-
-        /* --- INPUTS --- */
-        .form-group { display: flex; flex-direction: column; gap: 12px; width: 100%; }
-        input, select {
-            background: #222; border: 1px solid var(--border);
-            padding: 14px; border-radius: 12px; color: white;
-            font-family: inherit; font-size: 1rem;
-        }
-
-        /* --- APP INTERFACE --- */
-        #main-app { display: none; flex-direction: column; height: 100vh; }
-
-        header {
-            padding: 15px 20px; display: flex; justify-content: space-between;
-            align-items: center; background: rgba(0,0,0,0.9);
-            border-bottom: 1px solid var(--border); z-index: 20;
-        }
-
-        .status-badge {
-            background: rgba(46, 213, 115, 0.1); color: #2ed573;
-            padding: 4px 12px; border-radius: 20px; font-size: 0.75rem;
-            font-weight: 600; display: flex; align-items: center; gap: 5px;
-        }
-        .status-dot { width: 6px; height: 6px; background: #2ed573; border-radius: 50%; box-shadow: 0 0 5px #2ed573; }
-
-        /* --- VIDEO LAYOUT --- */
-        .video-workspace { flex: 1; position: relative; display: flex; flex-direction: column; background: #000; overflow: hidden; }
+        .logo-main { font-size: 4rem; font-weight: 900; color: var(--primary); margin: 0; letter-spacing: -2px; }
         
-        #video-layout { height: 100%; position: relative; width: 100%; }
-        .remote-v { width: 100%; height: 100%; object-fit: cover; }
-        .local-v {
-            position: absolute; top: 15px; right: 15px;
-            width: 100px; height: 140px; border-radius: 12px;
-            border: 2px solid var(--primary); object-fit: cover;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8); z-index: 10;
+        .btn {
+            width: 100%; padding: 16px; border-radius: 14px; border: none;
+            font-weight: 600; font-size: 1rem; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            margin-bottom: 10px; transition: 0.2s;
         }
 
-        .partner-chip {
-            position: absolute; top: 15px; left: 15px;
-            background: rgba(0,0,0,0.7); backdrop-filter: blur(10px);
-            padding: 8px 15px; border-radius: 12px;
-            border: 1px solid var(--border); z-index: 10;
+        .btn-google { background: white; color: black; }
+        .btn-primary { background: var(--primary); color: black; }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: white; }
+
+        input, select {
+            width: 100%; background: #222; border: 1px solid var(--border);
+            padding: 14px; border-radius: 12px; color: white; margin-bottom: 10px;
         }
-        .partner-chip .name { font-weight: 600; font-size: 1rem; display: block; }
+
+        /* App Layout */
+        #main-app { display: none; flex-direction: column; height: 100vh; }
+        header { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; background: #000; border-bottom: 1px solid var(--border); }
+
+        .video-workspace { flex: 1; position: relative; background: #000; }
+        #video-layout { height: 100%; width: 100%; position: relative; }
+        .remote-v { width: 100%; height: 100%; object-fit: cover; background: #111; }
+        .local-v { position: absolute; top: 15px; right: 15px; width: 100px; height: 140px; border-radius: 12px; border: 2px solid var(--primary); object-fit: cover; z-index: 10; }
+
+        .partner-chip { position: absolute; top: 15px; left: 15px; background: rgba(0,0,0,0.8); padding: 8px 15px; border-radius: 12px; border: 1px solid var(--border); z-index: 10; }
+        .partner-chip .name { font-weight: 600; display: block; }
         .partner-chip .loc { font-size: 0.75rem; color: var(--primary); }
 
-        /* --- CHAT AREA --- */
-        #chat-area {
-            position: absolute; bottom: 100px; left: 0; width: 100%;
-            padding: 0 15px; display: flex; flex-direction: column;
-            pointer-events: none; z-index: 15;
-        }
-        #chat-area.full-mode { 
-            position: relative; height: calc(100% - 100px); 
-            bottom: 0; pointer-events: auto; background: var(--bg); 
-            padding-top: 20px;
-        }
+        #chat-area { position: absolute; bottom: 10px; left: 0; width: 100%; padding: 0 15px; z-index: 20; }
+        #chat-messages { height: 150px; overflow-y: auto; margin-bottom: 10px; }
+        .message-bubble { max-width: 80%; padding: 8px 12px; border-radius: 15px; margin-bottom: 5px; font-size: 0.9rem; }
+        .message-bubble.mine { background: var(--primary); color: black; align-self: flex-end; margin-left: auto; }
+        .message-bubble.other { background: var(--card); border: 1px solid var(--border); }
+        .sender { font-size: 0.6rem; opacity: 0.7; display: block; }
 
-        #chat-messages {
-            height: 200px; overflow-y: auto; display: flex; flex-direction: column;
-            gap: 8px; margin-bottom: 10px; pointer-events: auto;
-        }
-        #chat-area.full-mode #chat-messages { height: 100%; }
+        .chat-input-row { display: flex; gap: 8px; }
+        .chat-input-row input { margin-bottom: 0; border-radius: 25px; }
 
-        .message-bubble { 
-            max-width: 85%; padding: 8px 12px; border-radius: 15px; font-size: 0.9rem;
-            animation: slideUp 0.3s ease; line-height: 1.4;
-        }
-        .message-bubble.other { background: var(--card); align-self: flex-start; border-bottom-left-radius: 2px; border: 1px solid var(--border); }
-        .message-bubble.mine { background: var(--primary); color: black; align-self: flex-end; border-bottom-right-radius: 2px; }
-        .sender { font-size: 0.65rem; font-weight: bold; opacity: 0.7; display: block; margin-bottom: 2px; }
-
-        .chat-input-row { display: flex; gap: 8px; pointer-events: auto; }
-        .chat-input-row input { flex: 1; border-radius: 25px; background: rgba(255,255,255,0.1); border: 1px solid var(--border); padding: 12px 20px; }
-
-        /* --- MATCHING OVERLAY --- */
-        #matching-overlay {
-            position: absolute; inset: 0; background: rgba(0,0,0,0.9);
-            display: none; flex-direction: column; align-items: center; justify-content: center;
-            z-index: 50;
-        }
-        #matching-overlay.active { display: flex; }
-
-        .spinner {
-            width: 50px; height: 50px; border: 3px solid var(--border);
-            border-top: 3px solid var(--primary); border-radius: 50%;
-            animation: spin 0.8s linear infinite; margin-bottom: 15px;
-        }
-
-        /* --- FOOTER --- */
-        .app-footer {
-            height: 85px; background: #000; padding: 10px 20px;
-            display: flex; align-items: center; justify-content: center;
-            border-top: 1px solid var(--border); z-index: 20;
-        }
-        .btn-swap { max-width: 400px; border-radius: 30px; font-size: 1.1rem; box-shadow: 0 8px 20px rgba(251, 192, 45, 0.2); }
-
-        /* --- ANIMATIONS --- */
+        #matching-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.9); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 50; }
+        .spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top: 3px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 10px; }
+        
         @keyframes spin { 100% { transform: rotate(360deg); } }
-        @keyframes slideUp { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        .fade-out { opacity: 0; pointer-events: none; }
-        .hide { transform: scale(0.95); opacity: 0; }
+
+        footer { height: 80px; padding: 10px 20px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: center; background: #000; }
     </style>
 </head>
 <body>
 
-    <!-- 1. AUTH SCREEN -->
     <div id="auth-screen" class="screen">
         <div class="auth-card" id="login-box">
             <h1 class="logo-main">WAZE</h1>
-            <p class="tagline">Le Mapane Virtuel du Gabon 🇬🇦</p>
+            <p style="color:var(--text-dim); margin-bottom:30px;">Le Mapane Virtuel du Gabon 🇬🇦</p>
+            <!-- Appel direct via window.loginWithGoogle -->
             <button class="btn btn-google" onclick="window.loginWithGoogle()">
-                <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" width="20" alt="G">
+                <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" width="18">
                 Rejoindre le Mapane
             </button>
-            <p style="font-size: 0.8rem; color: var(--text-dim);">Discussion vidéo et message sécurisée</p>
         </div>
 
         <div class="auth-card" id="register-form" style="display:none;">
-            <h2 style="margin: 0 0 20px 0;">Ton Profil</h2>
-            <div class="form-group">
-                <input type="text" id="reg-name" placeholder="Pseudo / Petit nom">
-                <select id="reg-gender">
-                    <option value="">Sexe</option>
-                    <option value="M">Homme</option>
-                    <option value="F">Femme</option>
-                </select>
-                <select id="reg-province">
-                    <option value="">Ta Province</option>
-                    <option value="Estuaire">Estuaire</option>
-                    <option value="Haut-Ogooué">Haut-Ogooué</option>
-                    <option value="Moyen-Ogooué">Moyen-Ogooué</option>
-                    <option value="Ngounié">Ngounié</option>
-                    <option value="Nyanga">Nyanga</option>
-                    <option value="Ogooué-Ivindo">Ogooué-Ivindo</option>
-                    <option value="Ogooué-Lolo">Ogooué-Lolo</option>
-                    <option value="Ogooué-Maritime">Ogooué-Maritime</option>
-                    <option value="Woleu-Ntem">Woleu-Ntem</option>
-                </select>
-                <button class="btn btn-primary" onclick="window.finishRegistration()">VALIDER</button>
-            </div>
+            <h2>Ton Profil</h2>
+            <input type="text" id="reg-name" placeholder="Pseudo">
+            <select id="reg-gender">
+                <option value="">Sexe</option>
+                <option value="M">Homme</option>
+                <option value="F">Femme</option>
+            </select>
+            <select id="reg-province">
+                <option value="">Ta Province</option>
+                <option value="Estuaire">Estuaire</option>
+                <option value="Haut-Ogooué">Haut-Ogooué</option>
+                <option value="Moyen-Ogooué">Moyen-Ogooué</option>
+                <option value="Ngounié">Ngounié</option>
+                <option value="Nyanga">Nyanga</option>
+                <option value="Ogooué-Ivindo">Ogooué-Ivindo</option>
+                <option value="Ogooué-Lolo">Ogooué-Lolo</option>
+                <option value="Ogooué-Maritime">Ogooué-Maritime</option>
+                <option value="Woleu-Ntem">Woleu-Ntem</option>
+            </select>
+            <button class="btn btn-primary" onclick="window.finishRegistration()">VALIDER</button>
         </div>
     </div>
 
-    <!-- 2. MODE SELECTION -->
     <div id="selection-screen" class="screen" style="display:none;">
         <div class="auth-card">
-            <h3 style="margin-top:0">Prêt pour le Mapane ?</h3>
-            <p class="tagline">Choisis ton mode de discussion</p>
+            <h3>Mode de Mapane</h3>
             <button class="btn btn-primary" onclick="window.startChatMode('video')">Discussion Vidéo</button>
             <button class="btn btn-outline" onclick="window.startChatMode('text')">Messages Privés</button>
-            <button class="btn btn-outline" style="color:#ff4444; border-color: rgba(255,68,68,0.2)" onclick="window.logout()">Déconnexion</button>
+            <button class="btn btn-outline" style="color:red" onclick="window.logout()">Déconnexion</button>
         </div>
     </div>
 
-    <!-- 3. MAIN APP -->
     <div id="main-app">
         <header>
-            <div style="font-weight: 900; letter-spacing: -1px; font-size: 1.4rem;">WAZE<span style="color:var(--primary)">.GA</span></div>
-            <div class="status-badge"><div class="status-dot"></div> Live Match</div>
-            <button onclick="location.reload()" style="background:none; border:none; color:var(--text-dim); cursor:pointer; font-weight:600;">Quitter</button>
+            <div style="font-weight:900; font-size:1.4rem;">WAZE<span style="color:var(--primary)">.GA</span></div>
+            <button onclick="location.reload()" style="background:none; border:none; color:var(--text-dim); font-weight:600;">Quitter</button>
         </header>
 
         <div class="video-workspace">
             <div id="matching-overlay">
                 <div class="spinner"></div>
-                <p style="font-weight: 600; letter-spacing: 1px; margin:0">MATCHING EN COURS...</p>
-                <p style="color:var(--text-dim); font-size: 0.8rem; margin-top:5px;">On cherche un compatriote pour toi.</p>
+                <p>MATCHING EN COURS...</p>
             </div>
 
             <div id="video-layout">
                 <div class="partner-chip">
-                    <span class="name" id="current-partner-name">En attente...</span>
+                    <span class="name" id="current-partner-name">En attente</span>
                     <span class="loc" id="current-partner-loc">Gabon</span>
                 </div>
-                <video id="remoteVideo" class="remote-v" autoplay playsinline poster="https://www.transparenttextures.com/patterns/carbon-fibre.png"></video>
+                <video id="remoteVideo" class="remote-v" autoplay playsinline></video>
                 <video id="localVideo" class="local-v" autoplay muted playsinline></video>
             </div>
 
             <div id="chat-area">
                 <div id="chat-messages"></div>
                 <div class="chat-input-row">
-                    <input type="text" id="chat-input" placeholder="Écris un message...">
-                    <button class="btn btn-primary" style="width: auto; padding: 10px 20px; border-radius: 25px;" onclick="window.sendMessage()">Envoyer</button>
+                    <input type="text" id="chat-input" placeholder="Message...">
+                    <button class="btn btn-primary" style="width:auto; padding:0 20px; border-radius:25px;" onclick="window.sendMessage()">Envoyer</button>
                 </div>
             </div>
         </div>
 
-        <footer class="app-footer">
-            <button class="btn btn-primary btn-swap" onclick="window.nextMapane()">
+        <footer>
+            <button class="btn btn-primary" style="max-width:400px; border-radius:30px; font-size:1.1rem;" onclick="window.nextMapane()">
                 PROCHAIN MAPANE 🔄
             </button>
         </footer>
