@@ -2,409 +2,403 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>KGS - Nexus</title>
-    
-    <link rel="preconnect" href="https://cdn.tailwindcss.com">
-    <link rel="preconnect" href="https://unpkg.com">
-    <link rel="preconnect" href="https://esm.sh">
-    <link rel="preconnect" href="https://www.gstatic.com">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WAZE | Le Mapane Premium 241</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;900&display=swap" rel="stylesheet">
+    <!-- Firebase SDK Modules -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, query, where, deleteDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAlOqC65tOuOnjmpnuMVH-ES2HaSOPVGT4",
+            authDomain: "waze-5644b.firebaseapp.com",
+            projectId: "waze-5644b",
+            storageBucket: "waze-5644b.firebasestorage.app",
+            messagingSenderId: "880209868778",
+            appId: "1:880209868778:web:2531beb85ba08432506493"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth();
+        const db = getFirestore();
+        const provider = new GoogleAuthProvider();
+
+        let currentUserData = null;
+        let localStream = null;
+        let mode = 'video';
+
+        // AUTHENTIFICATION
+        window.loginWithGoogle = async () => {
+            try {
+                const result = await signInWithPopup(auth, provider);
+                checkUser(result.user);
+            } catch (error) { console.error(error); }
+        };
+
+        async function checkUser(user) {
+            const docRef = doc(db, "users", user.uid);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                currentUserData = docSnap.data();
+                showSelection();
+            } else {
+                document.getElementById('login-box').classList.add('hide');
+                setTimeout(() => {
+                    document.getElementById('login-box').style.display = 'none';
+                    document.getElementById('register-form').style.display = 'flex';
+                }, 400);
+            }
+        }
+
+        window.finishRegistration = async () => {
+            const user = auth.currentUser;
+            const name = document.getElementById('reg-name').value;
+            const province = document.getElementById('reg-province').value;
+            const gender = document.getElementById('reg-gender').value;
+
+            if (name && province && gender) {
+                const data = { uid: user.uid, name, province, gender, email: user.email, joinedAt: new Date() };
+                await setDoc(doc(db, "users", user.uid), data);
+                currentUserData = data;
+                showSelection();
+            }
+        };
+
+        function showSelection() {
+            document.getElementById('auth-screen').style.display = 'none';
+            document.getElementById('selection-screen').style.display = 'flex';
+        }
+
+        window.startChatMode = (m) => {
+            mode = m;
+            document.getElementById('selection-screen').classList.add('fade-out');
+            setTimeout(() => {
+                document.getElementById('selection-screen').style.display = 'none';
+                document.getElementById('main-app').style.display = 'flex';
+                if(mode === 'video') {
+                    initCamera();
+                    document.getElementById('video-layout').style.display = 'block';
+                    document.getElementById('chat-area').classList.add('video-mode');
+                } else {
+                    document.getElementById('video-layout').style.display = 'none';
+                    document.getElementById('chat-area').classList.add('full-mode');
+                }
+            }, 500);
+        };
+
+        async function initCamera() {
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                document.getElementById('localVideo').srcObject = localStream;
+            } catch (e) { console.warn("Caméra indisponible"); }
+        }
+
+        window.nextMapane = async () => {
+            const overlay = document.getElementById('matching-overlay');
+            overlay.classList.add('active');
+            
+            // Logic de recherche fictive pour l'UI
+            setTimeout(() => {
+                overlay.classList.remove('active');
+                const mock = { name: "Mavoungou", province: "Nyanga" };
+                document.getElementById('current-partner-name').innerText = mock.name;
+                document.getElementById('current-partner-loc').innerText = mock.province;
+                appendMessage("Système", `Bienvenue dans le Mapane de ${mock.name}`);
+            }, 1500);
+        };
+
+        window.sendMessage = () => {
+            const input = document.getElementById('chat-input');
+            if(input.value.trim() !== "") {
+                appendMessage("Moi", input.value);
+                input.value = "";
+            }
+        };
+
+        function appendMessage(user, text) {
+            const box = document.getElementById('chat-messages');
+            const msg = document.createElement('div');
+            msg.className = 'message-bubble ' + (user === "Moi" ? "mine" : "other");
+            msg.innerHTML = `<span class="sender">${user}</span><p>${text}</p>`;
+            box.appendChild(msg);
+            box.scrollTop = box.scrollHeight;
+        }
+
+        window.logout = () => signOut(auth).then(() => location.reload());
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) checkUser(user);
+        });
+    </script>
 
     <style>
-        /* Base */
-        body { margin: 0; padding: 0; background-color: #000; font-family: system-ui, -apple-system, sans-serif; overflow: hidden; color: white; }
-        
-        /* Correction Mobile Hauteur 100% */
-        .h-dvh { height: 100vh; height: 100dvh; }
-        
-        /* Loader */
-        .app-loader {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; z-index: 9999; display: flex; flex-direction: column; 
-            align-items: center; justify-content: center;
+        :root {
+            --primary: #fbc02d;
+            --primary-dark: #c49000;
+            --bg: #0a0a0a;
+            --card: #161616;
+            --glass: rgba(255, 255, 255, 0.05);
+            --border: rgba(255, 255, 255, 0.1);
+            --text: #ffffff;
+            --text-dim: #a0a0a0;
         }
-        .pulse-ring {
-            width: 80px; height: 80px; border-radius: 50%; border: 4px solid #f43f5e;
-            animation: pulse-ring 2s infinite; position: absolute;
-        }
-        .loader-logo { z-index: 2; font-weight: 900; font-size: 40px; color: white; }
-        @keyframes pulse-ring { 0% { transform: scale(0.5); opacity: 1; } 100% { transform: scale(1.5); opacity: 0; } }
-        
-        /* Scrollbar & Glass */
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .glass { background: rgba(10, 10, 10, 0.95); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
-        .glass-rose { background: rgba(244, 63, 94, 0.15); backdrop-filter: blur(10px); border: 1px solid rgba(244, 63, 94, 0.3); }
-        
-        /* Animations */
-        .typing-dot { animation: typing 1.4s infinite ease-in-out both; }
-        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
-        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
-        @keyframes typing { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        .modal-anim { animation: slideUp 0.3s ease-out; }
-    </style>
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script>
-        tailwind.config = { theme: { extend: { colors: { rose: { 500: '#f43f5e', 600: '#e11d48', 900: '#881337' } } } } }
-    </script>
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body, html { 
+            margin: 0; padding: 0; 
+            font-family: 'Outfit', sans-serif; 
+            background: var(--bg); 
+            color: var(--text); 
+            height: 100vh; overflow: hidden;
+        }
+
+        /* --- AUTH SCREEN --- */
+        .screen {
+            position: fixed; inset: 0;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            background: radial-gradient(circle at center, #1a1a1a 0%, #000 100%);
+            padding: 20px; z-index: 100;
+            transition: opacity 0.5s ease;
+        }
+
+        .auth-card {
+            background: var(--card);
+            padding: 40px; border-radius: 24px;
+            width: 100%; max-width: 400px;
+            text-align: center;
+            border: 1px solid var(--border);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+
+        .logo-main { 
+            font-size: 4.5rem; font-weight: 900; 
+            color: var(--primary); margin: 0;
+            letter-spacing: -3px; line-height: 1;
+        }
+
+        .tagline { color: var(--text-dim); margin-bottom: 30px; font-weight: 300; }
+
+        /* --- BUTTONS --- */
+        .btn {
+            width: 100%; padding: 16px; border-radius: 14px;
+            border: none; font-weight: 600; font-size: 1rem;
+            cursor: pointer; transition: all 0.2s ease;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+        }
+
+        .btn-google { background: white; color: black; margin-bottom: 15px; }
+        .btn-google:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(255,255,255,0.1); }
+
+        .btn-primary { background: var(--primary); color: black; }
+        .btn-primary:hover { background: var(--primary-dark); transform: scale(1.02); }
+
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: white; margin-top: 10px; }
+
+        /* --- INPUTS --- */
+        .form-group { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+        input, select {
+            background: #222; border: 1px solid var(--border);
+            padding: 14px; border-radius: 12px; color: white;
+            font-family: inherit; font-size: 1rem;
+        }
+        input:focus { outline: none; border-color: var(--primary); }
+
+        /* --- APP INTERFACE --- */
+        #main-app { display: none; flex-direction: column; height: 100vh; }
+
+        header {
+            padding: 15px 20px; display: flex; justify-content: space-between;
+            align-items: center; background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(10px); border-bottom: 1px solid var(--border);
+        }
+
+        .status-badge {
+            background: rgba(46, 213, 115, 0.1); color: #2ed573;
+            padding: 4px 12px; border-radius: 20px; font-size: 0.75rem;
+            font-weight: 600; display: flex; align-items: center; gap: 5px;
+        }
+        .status-dot { width: 6px; height: 6px; background: #2ed573; border-radius: 50%; }
+
+        /* --- VIDEO LAYOUT --- */
+        .video-workspace { flex: 1; position: relative; display: flex; flex-direction: column; background: #000; }
+        
+        #video-layout { height: 100%; position: relative; }
+        .remote-v { width: 100%; height: 100%; object-fit: cover; }
+        .local-v {
+            position: absolute; top: 20px; right: 20px;
+            width: 110px; height: 160px; border-radius: 16px;
+            border: 2px solid var(--primary); object-fit: cover;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 10;
+        }
+
+        /* Partner Info Chip */
+        .partner-chip {
+            position: absolute; top: 20px; left: 20px;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);
+            padding: 10px 18px; border-radius: 14px;
+            border: 1px solid var(--border); display: flex; flex-direction: column;
+        }
+        .partner-chip .name { font-weight: 600; font-size: 1.1rem; }
+        .partner-chip .loc { font-size: 0.8rem; color: var(--primary); }
+
+        /* --- CHAT AREA --- */
+        #chat-area {
+            position: absolute; bottom: 100px; left: 0; width: 100%;
+            padding: 20px; display: flex; flex-direction: column;
+            pointer-events: none;
+        }
+        #chat-area.full-mode { height: 80%; bottom: 80px; pointer-events: auto; background: var(--bg); }
+
+        #chat-messages {
+            flex: 1; overflow-y: auto; display: flex; flex-direction: column;
+            gap: 10px; margin-bottom: 15px; pointer-events: auto;
+        }
+
+        .message-bubble { 
+            max-width: 80%; padding: 10px 15px; border-radius: 18px; font-size: 0.95rem;
+            animation: slideUp 0.3s ease;
+        }
+        .message-bubble p { margin: 0; }
+        .message-bubble.other { background: var(--card); align-self: flex-start; border-bottom-left-radius: 4px; border: 1px solid var(--border); }
+        .message-bubble.mine { background: var(--primary); color: black; align-self: flex-end; border-bottom-right-radius: 4px; }
+        .sender { font-size: 0.7rem; font-weight: bold; opacity: 0.7; display: block; margin-bottom: 2px; }
+
+        .chat-input-row {
+            display: flex; gap: 10px; pointer-events: auto;
+        }
+        .chat-input-row input { flex: 1; border-radius: 30px; background: rgba(255,255,255,0.1); border: 1px solid var(--border); }
+
+        /* --- MATCHING OVERLAY --- */
+        #matching-overlay {
+            position: absolute; inset: 0; background: rgba(0,0,0,0.95);
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 50;
+        }
+        #matching-overlay.active { display: flex; animation: fadeIn 0.3s ease; }
+
+        .spinner {
+            width: 60px; height: 60px; border: 4px solid var(--border);
+            border-top: 4px solid var(--primary); border-radius: 50%;
+            animation: spin 1s linear infinite; margin-bottom: 20px;
+        }
+
+        /* --- FOOTER --- */
+        .app-footer {
+            height: 90px; background: #000; padding: 15px 20px;
+            display: flex; align-items: center; justify-content: center;
+            border-top: 1px solid var(--border);
+        }
+        .btn-swap {
+            max-width: 500px; border-radius: 50px; font-size: 1.2rem;
+            box-shadow: 0 10px 20px rgba(251, 192, 45, 0.2);
+        }
+
+        /* --- ANIMATIONS --- */
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        @keyframes slideUp { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .fade-out { opacity: 0; pointer-events: none; }
+        .hide { transform: scale(0.9); opacity: 0; }
+
+    </style>
 </head>
 <body>
 
-    <div id="loader" class="app-loader">
-        <div class="pulse-ring"></div>
-        <div class="loader-logo">KGS</div>
-        <div style="margin-top: 20px; color: #666; font-size: 10px; letter-spacing: 2px;">INITIALISATION...</div>
+    <!-- 1. AUTH SCREEN -->
+    <div id="auth-screen" class="screen">
+        <div class="auth-card" id="login-box">
+            <h1 class="logo-main">WAZE</h1>
+            <p class="tagline">Le Mapane Virtuel du Gabon 🇬🇦</p>
+            <button class="btn btn-google" onclick="loginWithGoogle()">
+                <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" width="20" alt="G">
+                Rejoindre le Mapane
+            </button>
+            <p style="font-size: 0.8rem; color: var(--text-dim);">Discussion vidéo et message instantanée</p>
+        </div>
+
+        <div class="auth-card" id="register-form" style="display:none;">
+            <h2 style="margin-top:0">Ton Profil</h2>
+            <div class="form-group">
+                <input type="text" id="reg-name" placeholder="Pseudo / Petit nom">
+                <select id="reg-gender">
+                    <option value="">Sexe</option>
+                    <option value="M">Homme</option>
+                    <option value="F">Femme</option>
+                </select>
+                <select id="reg-province">
+                    <option value="">Ta Province</option>
+                    <option value="Estuaire">Estuaire</option>
+                    <option value="Haut-Ogooué">Haut-Ogooué</option>
+                    <option value="Moyen-Ogooué">Moyen-Ogooué</option>
+                    <option value="Ngounié">Ngounié</option>
+                    <option value="Nyanga">Nyanga</option>
+                    <option value="Ogooué-Ivindo">Ogooué-Ivindo</option>
+                    <option value="Ogooué-Lolo">Ogooué-Lolo</option>
+                    <option value="Ogooué-Maritime">Ogooué-Maritime</option>
+                    <option value="Woleu-Ntem">Woleu-Ntem</option>
+                </select>
+                <button class="btn btn-primary" onclick="finishRegistration()">VALIDER</button>
+            </div>
+        </div>
     </div>
 
-    <div id="root"></div>
+    <!-- 2. MODE SELECTION -->
+    <div id="selection-screen" class="screen" style="display:none;">
+        <div class="auth-card">
+            <h3>Bonjour ! 👋</h3>
+            <p class="tagline">Choisis comment tu veux mapaner aujourd'hui</p>
+            <button class="btn btn-primary" onclick="startChatMode('video')">Discussion Vidéo</button>
+            <button class="btn btn-outline" onclick="startChatMode('text')">Messages Privés</button>
+            <button class="btn btn-outline" style="color:#ff4444" onclick="logout()">Déconnexion</button>
+        </div>
+    </div>
 
-    <script type="text/babel" data-type="module">
-        import React, { useState, useEffect, useRef } from 'https://esm.sh/react@18.2.0';
-        import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, doc, setDoc, getDocs, updateDoc, arrayUnion, arrayRemove, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { Send, Shield, LogOut, EyeOff, MessageCircle, Heart, Mic, Trash2, Plus, ArrowRight, Copy, Hash, Users, Crown, Activity, Server, Eye, LockKeyhole, Bomb, AlertTriangle, Reply, X, UserMinus, Ban, Wifi, WifiOff, Phone, Share2, Unlock, Settings, Power } from 'https://esm.sh/lucide-react@0.344.0';
+    <!-- 3. MAIN APP -->
+    <div id="main-app">
+        <header>
+            <div style="font-weight: 900; letter-spacing: -1px; font-size: 1.4rem;">WAZE<span style="color:var(--primary)">.GA</span></div>
+            <div class="status-badge"><div class="status-dot"></div> Live Match</div>
+            <button onclick="location.reload()" style="background:none; border:none; color:var(--text-dim); cursor:pointer;">Quitter</button>
+        </header>
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyBQYoOdP2D0detYEtlpspZrizrXRDHQerg",
-            authDomain: "kgs-c6e96.firebaseapp.com",
-            projectId: "kgs-c6e96",
-            storageBucket: "kgs-c6e96.firebasestorage.app",
-            messagingSenderId: "135233323872",
-            appId: "1:135233323872:web:1bdb1794a3d34d72839405"
-        };
+        <div class="video-workspace">
+            <!-- Recherche Overlay -->
+            <div id="matching-overlay">
+                <div class="spinner"></div>
+                <p style="font-weight: 600; letter-spacing: 1px;">RECHERCHE D'UN COMPATRIOTE...</p>
+                <p style="color:var(--text-dim); font-size: 0.9rem;">Prépare-toi, ça va chauffer !</p>
+            </div>
 
-        const ROOMS_COL = 'kgs_nexus_rooms';
-        const USERS_COL = 'kgs_nexus_users';
-
-        let app, auth, db, appId;
-        try {
-            app = initializeApp(firebaseConfig);
-            auth = getAuth(app);
-            db = getFirestore(app);
-            appId = firebaseConfig.projectId;
-        } catch (e) { console.error(e); }
-
-        function KGSApp() {
-            const [user, setUser] = useState(null);
-            const [username, setUsername] = useState('');
-            const [view, setView] = useState('loading');
-            const [toast, setToast] = useState(null);
-            
-            const [currentRoom, setCurrentRoom] = useState(null);
-            const [roomData, setRoomData] = useState(null);
-            const [roomInput, setRoomInput] = useState('');
-            const [passwordInput, setPasswordInput] = useState('');
-            const [showPwdModal, setShowPwdModal] = useState(false);
-            const [pendingRoom, setPendingRoom] = useState(null);
-            
-            const [createOptions, setCreateOptions] = useState({ locked: false, password: '' });
-            const [showCreateModal, setShowCreateModal] = useState(false);
-
-            const [messages, setMessages] = useState([]);
-            const [inputText, setInputText] = useState('');
-            const [replyTo, setReplyTo] = useState(null);
-            const [isRec, setIsRec] = useState(false);
-            const [typingUsers, setTypingUsers] = useState([]);
-            
-            const [isAdmin, setIsAdmin] = useState(false);
-            const [adminStats, setAdminStats] = useState({ users: 0, rooms: 0 });
-            const [adminRooms, setAdminRooms] = useState([]);
-            const [showMembers, setShowMembers] = useState(false);
-
-            const scrollRef = useRef();
-            const mediaRef = useRef();
-            const chunksRef = useRef([]);
-            const typingTimeoutRef = useRef();
-
-            useEffect(() => {
-                setTimeout(() => { if(document.getElementById('loader')) document.getElementById('loader').style.display = 'none'; }, 1000);
-                
-                const unsub = onAuthStateChanged(auth, (u) => {
-                    if (u) {
-                        setUser(u);
-                        const saved = localStorage.getItem('kgs_username');
-                        if (saved) {
-                            setUsername(saved);
-                            if (saved === 'Whinsklay') setIsAdmin(true);
-                            const urlParams = new URLSearchParams(window.location.search);
-                            const roomParam = urlParams.get('room');
-                            if (roomParam) {
-                                handleJoinRequest(roomParam);
-                                window.history.replaceState({}, document.title, window.location.pathname);
-                            } else {
-                                setView('dashboard');
-                            }
-                        } else {
-                            setView('login');
-                        }
-                    } else {
-                        signInAnonymously(auth);
-                    }
-                });
-                return () => unsub();
-            }, []);
-
-            useEffect(() => {
-                if (!currentRoom) return;
-                const qMsg = collection(db, 'artifacts', appId, 'public', 'data', ROOMS_COL, currentRoom, 'msgs');
-                const unsubMsg = onSnapshot(qMsg, (snap) => {
-                    const msgs = snap.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => (a.time?.toMillis() || 0) - (b.time?.toMillis() || 0));
-                    setMessages(msgs.slice(-50));
-                    setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-                });
-
-                const unsubRoom = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', ROOMS_COL, currentRoom), (snap) => {
-                    if (snap.exists()) {
-                        const d = snap.data();
-                        setRoomData(d);
-                        if (d.banned?.includes(user?.uid) && !isAdmin) { alert("Vous avez été banni."); leaveRoom(); }
-                        if (d.typing) {
-                            const now = Date.now();
-                            const activeTypers = Object.entries(d.typing).filter(([uid, ts]) => uid !== user?.uid && now - ts < 3000).map(([uid]) => d.userNames?.[uid] || "Quelqu'un");
-                            setTypingUsers(activeTypers);
-                        }
-                    } else {
-                        if (view === 'chat') { alert("Ce salon a été supprimé."); leaveRoom(); }
-                    }
-                });
-                return () => { unsubMsg(); unsubRoom(); };
-            }, [currentRoom]);
-
-            useEffect(() => {
-                if (isAdmin && view === 'dashboard') {
-                    const fetch = async () => {
-                        const r = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', ROOMS_COL));
-                        const u = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', USERS_COL));
-                        setAdminStats({ rooms: r.size, users: u.size });
-                        setAdminRooms(r.docs.map(d => ({id: d.id, ...d.data()})));
-                    };
-                    const i = setInterval(fetch, 5000); fetch();
-                    return () => clearInterval(i);
-                }
-            }, [isAdmin, view]);
-
-            const showToast = (msg, type='info') => { setToast({msg, type}); setTimeout(() => setToast(null), 3000); };
-
-            const doLogin = (e) => {
-                e.preventDefault();
-                if(!username.trim()) return;
-                const n = username.trim();
-                localStorage.setItem('kgs_username', n);
-                setUsername(n);
-                if (n === 'Whinsklay') setIsAdmin(true);
-                setDoc(doc(db, 'artifacts', appId, 'public', 'data', USERS_COL, user.uid), { name: n, lastSeen: serverTimestamp() });
-                setView('dashboard');
-            };
-
-            const handleCreateRoom = async () => {
-                const code = "KGS-" + Math.floor(1000 + Math.random() * 9000);
-                try {
-                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', ROOMS_COL, code), {
-                        creator: username, creatorId: user.uid, created: serverTimestamp(),
-                        users: [username], userNames: { [user.uid]: username }, banned: [],
-                        locked: createOptions.locked, password: createOptions.password, active: true, typing: {}
-                    });
-                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', ROOMS_COL, code, 'msgs'), {
-                        text: createOptions.locked ? `🔒 Salon Privé créé par ${username}` : `Salon Ouvert créé par ${username}`, sys: true, time: serverTimestamp()
-                    });
-                    setCurrentRoom(code); setView('chat'); setShowCreateModal(false);
-                } catch (e) { showToast("Erreur création", "error"); }
-            };
-
-            const handleJoinRequest = async (codeStr) => {
-                const code = codeStr.trim().toUpperCase();
-                if (code.length < 3) return;
-                const ref = doc(db, 'artifacts', appId, 'public', 'data', ROOMS_COL, code);
-                const snap = await getDoc(ref);
-                if (!snap.exists()) return showToast("Salon introuvable", "error");
-                const d = snap.data();
-                if (d.banned?.includes(user.uid) && !isAdmin) return showToast("Banni de ce salon", "error");
-                if (d.locked && d.creatorId !== user.uid && !isAdmin) { setPendingRoom(code); setShowPwdModal(true); } 
-                else { enterRoom(code); }
-            };
-
-            const verifyPassword = async () => {
-                const ref = doc(db, 'artifacts', appId, 'public', 'data', ROOMS_COL, pendingRoom);
-                const snap = await getDoc(ref);
-                if (snap.data().password === passwordInput) { enterRoom(pendingRoom); setShowPwdModal(false); setPasswordInput(''); } 
-                else { showToast("Mot de passe incorrect", "error"); }
-            };
-
-            const enterRoom = async (code) => {
-                if (!isAdmin) {
-                    const ref = doc(db, 'artifacts', appId, 'public', 'data', ROOMS_COL, code);
-                    await updateDoc(ref, { users: arrayUnion(username), [`userNames.${user.uid}`]: username });
-                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', ROOMS_COL, code, 'msgs'), { text: `${username} a rejoint le salon.`, sys: true, time: serverTimestamp() });
-                }
-                setCurrentRoom(code); setView('chat');
-            };
-
-            const leaveRoom = () => { setCurrentRoom(null); setMessages([]); setView('dashboard'); };
-            const deleteRoom = async () => { if (!confirm("Voulez-vous vraiment SUPPRIMER ce salon ?")) return; try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', ROOMS_COL, currentRoom)); leaveRoom(); } catch(e) { showToast("Erreur", "error"); } };
-
-            const handleTyping = (e) => {
-                setInputText(e.target.value);
-                if (currentRoom) {
-                    const ref = doc(db, 'artifacts', appId, 'public', 'data', ROOMS_COL, currentRoom);
-                    updateDoc(ref, { [`typing.${user.uid}`]: Date.now() });
-                }
-            };
-
-            const sendMsg = async (txt, audio) => {
-                const payload = {
-                    sender: username, uid: user.uid,
-                    text: audio ? "Vocal" : txt, audio: audio || null, type: audio ? 'audio' : 'text',
-                    time: serverTimestamp(), listened: [], reply: replyTo ? { sender: replyTo.sender, text: replyTo.text } : null
-                };
-                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', ROOMS_COL, currentRoom, 'msgs'), payload);
-                setInputText(''); setReplyTo(null);
-            };
-
-            const startCall = () => {
-                const link = `https://meet.jit.si/KGS-SECURE-${currentRoom}-${appId.substr(0,5)}`;
-                if (confirm("Démarrer un appel de groupe sécurisé ?")) { window.open(link, '_blank'); sendMsg(`📞 A démarré un appel de groupe.`, null); }
-            };
-
-            const shareLink = () => {
-                const url = window.location.href.split('?')[0] + '?room=' + currentRoom;
-                if (navigator.share) { navigator.share({ title: 'Rejoins-moi sur KGS', text: 'Code: ' + currentRoom, url: url }); } 
-                else { navigator.clipboard.writeText(url); showToast("Lien copié !"); }
-            };
-
-            const isCreator = roomData?.creatorId === user?.uid;
-
-            if (view === 'login') return (
-                <div className="h-dvh flex flex-col items-center justify-center p-6 bg-black">
-                    <div className="w-full max-w-sm glass p-8 rounded-3xl text-center border-rose-900/50">
-                        <div className="mx-auto w-20 h-20 rounded-full glass-rose flex items-center justify-center text-rose-500 mb-6 shadow-[0_0_20px_rgba(244,63,94,0.3)]"><Shield size={40} /></div>
-                        <h1 className="text-3xl font-black text-rose-500 mb-1 tracking-tighter">KGS NEXUS</h1>
-                        <p className="text-gray-500 text-xs mb-8 uppercase tracking-widest">v7.1 Mobile Fix</p>
-                        <form onSubmit={doLogin} className="space-y-4">
-                            <input type="text" value={username} onChange={e => setUsername(e.target.value)} placeholder="IDENTIFIANT" className="w-full bg-black/50 border border-gray-800 rounded-xl px-4 py-4 text-center font-bold text-white focus:border-rose-600 outline-none transition-all placeholder-gray-700"/>
-                            <button className="w-full bg-rose-600 hover:bg-rose-500 text-white font-bold py-4 rounded-xl shadow-[0_0_15px_rgba(225,29,72,0.4)]">CONNEXION</button>
-                        </form>
-                    </div>
+            <div id="video-layout">
+                <div class="partner-chip">
+                    <span class="name" id="current-partner-name">En attente</span>
+                    <span class="loc" id="current-partner-loc">Gabon</span>
                 </div>
-            );
+                <video id="remoteVideo" class="remote-v" autoplay playsinline poster="https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&q=80&w=1000"></video>
+                <video id="localVideo" class="local-v" autoplay muted playsinline></video>
+            </div>
 
-            if (view === 'dashboard') return (
-                <div className="h-dvh flex flex-col bg-black">
-                    <div className="p-4 flex-none glass flex justify-between items-center z-10 relative">
-                        <div className="font-black text-xl text-rose-500 tracking-tighter">KGS</div>
-                        <div className="flex items-center gap-3">
-                            <div className="text-right"><div className="text-xs font-bold text-white">{username}</div><div className="text-[9px] text-green-500">EN LIGNE</div></div>
-                            <button onClick={() => { localStorage.clear(); window.location.reload(); }}><LogOut size={18} className="text-gray-500"/></button>
-                        </div>
-                    </div>
-                    <div className="flex-1 p-6 flex flex-col gap-6 overflow-y-auto">
-                        {isAdmin && (
-                            <div className="glass p-4 rounded-2xl border-yellow-900/30">
-                                <h3 className="text-yellow-500 font-bold mb-4 flex items-center gap-2 text-sm"><Crown size={14}/> ADMIN</h3>
-                                <div className="grid grid-cols-2 gap-2 mb-4"><div className="bg-gray-900/50 p-2 rounded text-center"><div className="text-xl font-bold">{adminStats.users}</div><div className="text-[10px] text-gray-500">AGENTS</div></div><div className="bg-gray-900/50 p-2 rounded text-center"><div className="text-xl font-bold">{adminStats.rooms}</div><div className="text-[10px] text-gray-500">SALONS</div></div></div>
-                                <div className="space-y-1 max-h-32 overflow-y-auto">
-                                    {adminRooms.map(r => (<div key={r.id} className="flex justify-between items-center bg-gray-900 p-2 rounded text-xs text-gray-400"><span>{r.id} {r.locked && '🔒'}</span><button onClick={() => handleJoinRequest(r.id)}><Eye size={12}/></button></div>))}
-                                </div>
-                            </div>
-                        )}
-                        <button onClick={() => setShowCreateModal(true)} className="w-full py-5 rounded-2xl bg-gradient-to-r from-gray-900 to-gray-800 border border-gray-700 hover:border-rose-500 flex flex-col items-center gap-1 group relative overflow-hidden">
-                            <div className="absolute inset-0 bg-rose-600/10 opacity-0 group-hover:opacity-100 transition-opacity"></div><Plus size={28} className="text-rose-500 relative z-10" /><span className="font-bold text-white text-sm relative z-10">CRÉER UN SALON</span>
-                        </button>
-                        <div className="glass p-1 rounded-2xl flex items-center mt-2">
-                            <input type="text" value={roomInput} onChange={e => setRoomInput(e.target.value.toUpperCase())} placeholder="CODE SALON" className="bg-transparent flex-1 px-4 py-3 outline-none font-mono text-center font-bold placeholder-gray-700 text-sm"/>
-                            <button onClick={() => handleJoinRequest(roomInput)} className="bg-white text-black font-bold px-5 py-3 rounded-xl text-sm">GO</button>
-                        </div>
-                    </div>
-                    {showCreateModal && (
-                        <div className="fixed inset-0 bg-black/90 z-50 flex items-end sm:items-center justify-center p-4 backdrop-blur-sm">
-                            <div className="bg-gray-900 w-full max-w-sm rounded-3xl p-6 border border-gray-800 modal-anim">
-                                <div className="flex justify-between mb-6"><h3 className="font-bold text-lg">Nouveau Salon</h3><button onClick={() => setShowCreateModal(false)}><X/></button></div>
-                                <div className="space-y-4">
-                                    <div className="flex items-center justify-between p-3 bg-black rounded-xl">
-                                        <div className="flex items-center gap-3">{createOptions.locked ? <LockKeyhole size={20} className="text-rose-500"/> : <Unlock size={20} className="text-green-500"/>}<div className="text-sm font-bold">{createOptions.locked ? 'Privé (Verrouillé)' : 'Public (Ouvert)'}</div></div>
-                                        <input type="checkbox" checked={createOptions.locked} onChange={e => setCreateOptions({...createOptions, locked: e.target.checked})} className="w-5 h-5 accent-rose-500"/>
-                                    </div>
-                                    {createOptions.locked && (<input type="text" placeholder="Définir un mot de passe" value={createOptions.password} onChange={e => setCreateOptions({...createOptions, password: e.target.value})} className="w-full bg-black border border-gray-700 rounded-xl p-3 text-white outline-none"/>)}
-                                    <button onClick={handleCreateRoom} className="w-full bg-rose-600 font-bold py-3 rounded-xl mt-2">LANCER LE SALON</button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                    {showPwdModal && (
-                        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-6">
-                            <div className="bg-gray-900 w-full max-w-xs rounded-2xl p-6 border border-rose-500/50 text-center">
-                                <LockKeyhole size={32} className="mx-auto text-rose-500 mb-4"/><h3 className="font-bold mb-4">Salon Verrouillé</h3>
-                                <input type="password" placeholder="Mot de passe" value={passwordInput} onChange={e => setPasswordInput(e.target.value)} className="w-full bg-black border border-gray-700 rounded-lg p-3 mb-4 text-center text-white outline-none"/>
-                                <div className="flex gap-2"><button onClick={() => setShowPwdModal(false)} className="flex-1 bg-gray-800 py-2 rounded-lg font-bold">Annuler</button><button onClick={verifyPassword} className="flex-1 bg-rose-600 py-2 rounded-lg font-bold">Entrer</button></div>
-                            </div>
-                        </div>
-                    )}
+            <!-- Chat Area -->
+            <div id="chat-area">
+                <div id="chat-messages"></div>
+                <div class="chat-input-row">
+                    <input type="text" id="chat-input" placeholder="Dis quelque chose de gentil...">
+                    <button class="btn btn-primary" style="width: auto; padding: 10px 20px; border-radius: 30px;" onclick="sendMessage()">Envoyer</button>
                 </div>
-            );
+            </div>
+        </div>
 
-            if (view === 'chat') return (
-                <div className="h-dvh flex flex-col bg-black">
-                    {toast && <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full text-xs font-bold shadow-lg ${toast.type === 'error' ? 'bg-red-500 text-white' : 'bg-green-500 text-black'}`}>{toast.msg}</div>}
-                    <div className="p-3 flex-none glass flex justify-between items-center z-10 relative">
-                        <div className="flex items-center gap-3">
-                            <button onClick={leaveRoom} className="p-2 bg-gray-900 rounded-full text-gray-400"><ArrowRight size={18} className="rotate-180"/></button>
-                            <div>
-                                <div className="font-mono font-bold text-lg leading-none flex items-center gap-2">{currentRoom} {roomData?.locked && <LockKeyhole size={12} className="text-rose-500"/>}</div>
-                                <div className="text-[9px] text-green-500 font-bold flex items-center gap-1 mt-1"><span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span> {roomData?.users?.length || 1} EN LIGNE</div>
-                            </div>
-                        </div>
-                        <div className="flex gap-2"><button onClick={startCall} className="p-2 bg-green-900/30 text-green-500 rounded-full border border-green-900"><Phone size={18}/></button><button onClick={shareLink} className="p-2 bg-blue-900/30 text-blue-500 rounded-full border border-blue-900"><Share2 size={18}/></button><button onClick={() => setShowMembers(true)} className="p-2 bg-gray-900 rounded-full text-gray-400"><Users size={18}/></button></div>
-                    </div>
-                    <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-black to-gray-900 min-h-0">
-                        {messages.map(m => {
-                            const isMe = m.uid === user.uid;
-                            if (m.sys) return <div key={m.id} className="text-center text-[10px] text-gray-500 font-mono my-2">- {m.text} -</div>;
-                            return (
-                                <div key={m.id} className={`flex w-full ${isMe ? 'justify-end' : 'justify-start'}`}>
-                                    <div className={`max-w-[85%] flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
-                                        <div className="flex items-center gap-2 mb-1 px-1"><span className={`text-[9px] font-bold ${isMe ? 'text-rose-500' : 'text-gray-500'}`}>{m.sender}</span>{!isMe && <button onClick={() => setReplyTo(m)} className="text-gray-600"><Reply size={10}/></button>}</div>
-                                        <div className={`relative px-4 py-2 rounded-2xl text-sm break-words shadow-lg ${isMe ? 'bg-rose-600 text-white rounded-tr-none' : 'bg-gray-800 text-gray-200 rounded-tl-none'}`}>
-                                            {m.reply && <div className="mb-2 pl-2 border-l-2 border-white/30 text-xs opacity-70"><span className="font-bold block">{m.reply.sender}</span>{m.reply.text}</div>}
-                                            {m.type === 'audio' ? <div className="min-w-[150px]"><div className="flex items-center gap-2 mb-1 text-xs font-bold opacity-80"><Mic size={12}/> Audio</div><audio controls src={m.audio} className="w-full h-8"/></div> : m.text}
-                                        </div>
-                                        <div className="text-[9px] text-gray-600 mt-1">{m.time?.toMillis ? new Date(m.time.toMillis()).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : ''}</div>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                        {typingUsers.length > 0 && (<div className="text-xs text-gray-500 ml-4 flex items-center gap-1"><span className="typing-dot w-1 h-1 bg-gray-500 rounded-full"></span><span className="typing-dot w-1 h-1 bg-gray-500 rounded-full"></span><span className="typing-dot w-1 h-1 bg-gray-500 rounded-full"></span>{typingUsers.join(', ')} écrit...</div>)}
-                        <div ref={scrollRef}></div>
-                    </div>
-                    <div className="p-3 flex-none glass border-t border-gray-800 z-10 safe-area-bottom">
-                        {replyTo && <div className="flex justify-between items-center bg-gray-800 p-2 rounded-lg mb-2 text-xs border-l-2 border-rose-500"><div>Rep à {replyTo.sender}</div><button onClick={() => setReplyTo(null)}><X size={14}/></button></div>}
-                        <form onSubmit={e => {e.preventDefault(); if(inputText.trim()) sendMsg(inputText);}} className="flex gap-2 items-center">
-                            <input type="text" value={inputText} onChange={handleTyping} placeholder="Message..." className="flex-1 bg-gray-900 border border-gray-700 text-white rounded-xl px-4 py-3 focus:border-rose-500 outline-none"/>
-                            {inputText.trim() ? <button className="p-3 bg-rose-600 rounded-xl text-white"><Send size={20}/></button> : <div className="p-3 bg-gray-800 rounded-xl text-gray-500"><Mic size={20}/></div>}
-                        </form>
-                    </div>
-                    {showMembers && (
-                        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-6 backdrop-blur-sm">
-                            <div className="glass w-full max-w-sm rounded-3xl p-6 border-gray-700">
-                                <div className="flex justify-between items-center mb-6"><h3 className="font-bold text-lg">Paramètres</h3><button onClick={() => setShowMembers(false)}><X/></button></div>
-                                {(isCreator || isAdmin) && (<div className="mb-6 p-4 bg-red-900/20 border border-red-900 rounded-xl"><h4 className="text-red-500 font-bold text-xs uppercase mb-2">Zone Danger</h4><button onClick={deleteRoom} className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 py-2 rounded-lg text-sm font-bold"><Power size={16}/> SUPPRIMER LE SALON</button></div>)}
-                                <h4 className="text-gray-500 text-xs uppercase mb-2">Membres Actifs</h4>
-                                <div className="space-y-2 max-h-40 overflow-y-auto">
-                                    {roomData?.users?.map((u, i) => (<div key={i} className="flex justify-between items-center bg-gray-900 p-2 rounded-lg"><span className="text-sm font-bold">{u} {u === roomData.creator && '👑'}</span></div>))}
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            );
-        }
+        <footer class="app-footer">
+            <button class="btn btn-primary btn-swap" onclick="nextMapane()">
+                PROCHAIN MAPANE 🔄
+            </button>
+        </footer>
+    </div>
 
-        const root = createRoot(document.getElementById('root'));
-        root.render(<KGSApp />);
-    </script>
 </body>
 </html>
-
 
