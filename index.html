@@ -10,7 +10,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, query, where, deleteDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAlOqC65tOuOnjmpnuMVH-ES2HaSOPVGT4",
@@ -28,26 +28,32 @@
 
         let currentUserData = null;
         let localStream = null;
-        let mode = 'video';
 
-        // AUTHENTIFICATION
+        // Liaison des fonctions au scope global window pour les boutons HTML
         window.loginWithGoogle = async () => {
             try {
                 const result = await signInWithPopup(auth, provider);
-                checkUser(result.user);
-            } catch (error) { console.error(error); }
+                await checkUser(result.user);
+            } catch (error) { 
+                console.error("Erreur Auth:", error);
+                alert("Erreur de connexion : " + error.message);
+            }
         };
 
         async function checkUser(user) {
+            if (!user) return;
             const docRef = doc(db, "users", user.uid);
             const docSnap = await getDoc(docRef);
+            
             if (docSnap.exists()) {
                 currentUserData = docSnap.data();
                 showSelection();
             } else {
-                document.getElementById('login-box').classList.add('hide');
+                // Animation de transition vers le formulaire
+                const loginBox = document.getElementById('login-box');
+                loginBox.classList.add('hide');
                 setTimeout(() => {
-                    document.getElementById('login-box').style.display = 'none';
+                    loginBox.style.display = 'none';
                     document.getElementById('register-form').style.display = 'flex';
                 }, 400);
             }
@@ -60,10 +66,23 @@
             const gender = document.getElementById('reg-gender').value;
 
             if (name && province && gender) {
-                const data = { uid: user.uid, name, province, gender, email: user.email, joinedAt: new Date() };
-                await setDoc(doc(db, "users", user.uid), data);
-                currentUserData = data;
-                showSelection();
+                const data = { 
+                    uid: user.uid, 
+                    name, 
+                    province, 
+                    gender, 
+                    email: user.email, 
+                    joinedAt: new Date().toISOString() 
+                };
+                try {
+                    await setDoc(doc(db, "users", user.uid), data);
+                    currentUserData = data;
+                    showSelection();
+                } catch (e) {
+                    alert("Erreur lors de l'enregistrement : " + e.message);
+                }
+            } else {
+                alert("Veuillez remplir tous les champs.");
             }
         };
 
@@ -72,8 +91,7 @@
             document.getElementById('selection-screen').style.display = 'flex';
         }
 
-        window.startChatMode = (m) => {
-            mode = m;
+        window.startChatMode = (mode) => {
             document.getElementById('selection-screen').classList.add('fade-out');
             setTimeout(() => {
                 document.getElementById('selection-screen').style.display = 'none';
@@ -81,7 +99,7 @@
                 if(mode === 'video') {
                     initCamera();
                     document.getElementById('video-layout').style.display = 'block';
-                    document.getElementById('chat-area').classList.add('video-mode');
+                    document.getElementById('chat-area').classList.remove('full-mode');
                 } else {
                     document.getElementById('video-layout').style.display = 'none';
                     document.getElementById('chat-area').classList.add('full-mode');
@@ -93,20 +111,27 @@
             try {
                 localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
                 document.getElementById('localVideo').srcObject = localStream;
-            } catch (e) { console.warn("Caméra indisponible"); }
+            } catch (e) { 
+                console.warn("Caméra indisponible ou bloquée.");
+            }
         }
 
-        window.nextMapane = async () => {
+        window.nextMapane = () => {
             const overlay = document.getElementById('matching-overlay');
             overlay.classList.add('active');
             
-            // Logic de recherche fictive pour l'UI
             setTimeout(() => {
                 overlay.classList.remove('active');
-                const mock = { name: "Mavoungou", province: "Nyanga" };
-                document.getElementById('current-partner-name').innerText = mock.name;
-                document.getElementById('current-partner-loc').innerText = mock.province;
-                appendMessage("Système", `Bienvenue dans le Mapane de ${mock.name}`);
+                const mockPartners = [
+                    { name: "Mavoungou", province: "Nyanga" },
+                    { name: "Jessica", province: "Estuaire" },
+                    { name: "Ulrich", province: "Haut-Ogooué" }
+                ];
+                const partner = mockPartners[Math.floor(Math.random() * mockPartners.length)];
+                
+                document.getElementById('current-partner-name').innerText = partner.name;
+                document.getElementById('current-partner-loc').innerText = partner.province;
+                appendMessage("Système", `Connecté à ${partner.name} (${partner.province})`);
             }, 1500);
         };
 
@@ -129,6 +154,7 @@
 
         window.logout = () => signOut(auth).then(() => location.reload());
 
+        // Listener d'état d'authentification au chargement
         onAuthStateChanged(auth, (user) => {
             if (user) checkUser(user);
         });
@@ -140,7 +166,6 @@
             --primary-dark: #c49000;
             --bg: #0a0a0a;
             --card: #161616;
-            --glass: rgba(255, 255, 255, 0.05);
             --border: rgba(255, 255, 255, 0.1);
             --text: #ffffff;
             --text-dim: #a0a0a0;
@@ -172,6 +197,7 @@
             text-align: center;
             border: 1px solid var(--border);
             box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            transition: transform 0.4s ease, opacity 0.4s ease;
         }
 
         .logo-main { 
@@ -194,7 +220,7 @@
         .btn-google:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(255,255,255,0.1); }
 
         .btn-primary { background: var(--primary); color: black; }
-        .btn-primary:hover { background: var(--primary-dark); transform: scale(1.02); }
+        .btn-primary:active { transform: scale(0.98); }
 
         .btn-outline { background: transparent; border: 1px solid var(--border); color: white; margin-top: 10px; }
 
@@ -205,15 +231,14 @@
             padding: 14px; border-radius: 12px; color: white;
             font-family: inherit; font-size: 1rem;
         }
-        input:focus { outline: none; border-color: var(--primary); }
 
         /* --- APP INTERFACE --- */
         #main-app { display: none; flex-direction: column; height: 100vh; }
 
         header {
             padding: 15px 20px; display: flex; justify-content: space-between;
-            align-items: center; background: rgba(0,0,0,0.8);
-            backdrop-filter: blur(10px); border-bottom: 1px solid var(--border);
+            align-items: center; background: rgba(0,0,0,0.9);
+            border-bottom: 1px solid var(--border); z-index: 20;
         }
 
         .status-badge {
@@ -221,89 +246,85 @@
             padding: 4px 12px; border-radius: 20px; font-size: 0.75rem;
             font-weight: 600; display: flex; align-items: center; gap: 5px;
         }
-        .status-dot { width: 6px; height: 6px; background: #2ed573; border-radius: 50%; }
+        .status-dot { width: 6px; height: 6px; background: #2ed573; border-radius: 50%; box-shadow: 0 0 5px #2ed573; }
 
         /* --- VIDEO LAYOUT --- */
-        .video-workspace { flex: 1; position: relative; display: flex; flex-direction: column; background: #000; }
+        .video-workspace { flex: 1; position: relative; display: flex; flex-direction: column; background: #000; overflow: hidden; }
         
-        #video-layout { height: 100%; position: relative; }
+        #video-layout { height: 100%; position: relative; width: 100%; }
         .remote-v { width: 100%; height: 100%; object-fit: cover; }
         .local-v {
-            position: absolute; top: 20px; right: 20px;
-            width: 110px; height: 160px; border-radius: 16px;
+            position: absolute; top: 15px; right: 15px;
+            width: 100px; height: 140px; border-radius: 12px;
             border: 2px solid var(--primary); object-fit: cover;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 10;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8); z-index: 10;
         }
 
-        /* Partner Info Chip */
         .partner-chip {
-            position: absolute; top: 20px; left: 20px;
-            background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);
-            padding: 10px 18px; border-radius: 14px;
-            border: 1px solid var(--border); display: flex; flex-direction: column;
+            position: absolute; top: 15px; left: 15px;
+            background: rgba(0,0,0,0.7); backdrop-filter: blur(10px);
+            padding: 8px 15px; border-radius: 12px;
+            border: 1px solid var(--border); z-index: 10;
         }
-        .partner-chip .name { font-weight: 600; font-size: 1.1rem; }
-        .partner-chip .loc { font-size: 0.8rem; color: var(--primary); }
+        .partner-chip .name { font-weight: 600; font-size: 1rem; display: block; }
+        .partner-chip .loc { font-size: 0.75rem; color: var(--primary); }
 
         /* --- CHAT AREA --- */
         #chat-area {
             position: absolute; bottom: 100px; left: 0; width: 100%;
-            padding: 20px; display: flex; flex-direction: column;
-            pointer-events: none;
+            padding: 0 15px; display: flex; flex-direction: column;
+            pointer-events: none; z-index: 15;
         }
-        #chat-area.full-mode { height: 80%; bottom: 80px; pointer-events: auto; background: var(--bg); }
+        #chat-area.full-mode { 
+            position: relative; height: calc(100% - 100px); 
+            bottom: 0; pointer-events: auto; background: var(--bg); 
+            padding-top: 20px;
+        }
 
         #chat-messages {
-            flex: 1; overflow-y: auto; display: flex; flex-direction: column;
-            gap: 10px; margin-bottom: 15px; pointer-events: auto;
+            height: 200px; overflow-y: auto; display: flex; flex-direction: column;
+            gap: 8px; margin-bottom: 10px; pointer-events: auto;
         }
+        #chat-area.full-mode #chat-messages { height: 100%; }
 
         .message-bubble { 
-            max-width: 80%; padding: 10px 15px; border-radius: 18px; font-size: 0.95rem;
-            animation: slideUp 0.3s ease;
+            max-width: 85%; padding: 8px 12px; border-radius: 15px; font-size: 0.9rem;
+            animation: slideUp 0.3s ease; line-height: 1.4;
         }
-        .message-bubble p { margin: 0; }
-        .message-bubble.other { background: var(--card); align-self: flex-start; border-bottom-left-radius: 4px; border: 1px solid var(--border); }
-        .message-bubble.mine { background: var(--primary); color: black; align-self: flex-end; border-bottom-right-radius: 4px; }
-        .sender { font-size: 0.7rem; font-weight: bold; opacity: 0.7; display: block; margin-bottom: 2px; }
+        .message-bubble.other { background: var(--card); align-self: flex-start; border-bottom-left-radius: 2px; border: 1px solid var(--border); }
+        .message-bubble.mine { background: var(--primary); color: black; align-self: flex-end; border-bottom-right-radius: 2px; }
+        .sender { font-size: 0.65rem; font-weight: bold; opacity: 0.7; display: block; margin-bottom: 2px; }
 
-        .chat-input-row {
-            display: flex; gap: 10px; pointer-events: auto;
-        }
-        .chat-input-row input { flex: 1; border-radius: 30px; background: rgba(255,255,255,0.1); border: 1px solid var(--border); }
+        .chat-input-row { display: flex; gap: 8px; pointer-events: auto; }
+        .chat-input-row input { flex: 1; border-radius: 25px; background: rgba(255,255,255,0.1); border: 1px solid var(--border); padding: 12px 20px; }
 
         /* --- MATCHING OVERLAY --- */
         #matching-overlay {
-            position: absolute; inset: 0; background: rgba(0,0,0,0.95);
+            position: absolute; inset: 0; background: rgba(0,0,0,0.9);
             display: none; flex-direction: column; align-items: center; justify-content: center;
             z-index: 50;
         }
-        #matching-overlay.active { display: flex; animation: fadeIn 0.3s ease; }
+        #matching-overlay.active { display: flex; }
 
         .spinner {
-            width: 60px; height: 60px; border: 4px solid var(--border);
-            border-top: 4px solid var(--primary); border-radius: 50%;
-            animation: spin 1s linear infinite; margin-bottom: 20px;
+            width: 50px; height: 50px; border: 3px solid var(--border);
+            border-top: 3px solid var(--primary); border-radius: 50%;
+            animation: spin 0.8s linear infinite; margin-bottom: 15px;
         }
 
         /* --- FOOTER --- */
         .app-footer {
-            height: 90px; background: #000; padding: 15px 20px;
+            height: 85px; background: #000; padding: 10px 20px;
             display: flex; align-items: center; justify-content: center;
-            border-top: 1px solid var(--border);
+            border-top: 1px solid var(--border); z-index: 20;
         }
-        .btn-swap {
-            max-width: 500px; border-radius: 50px; font-size: 1.2rem;
-            box-shadow: 0 10px 20px rgba(251, 192, 45, 0.2);
-        }
+        .btn-swap { max-width: 400px; border-radius: 30px; font-size: 1.1rem; box-shadow: 0 8px 20px rgba(251, 192, 45, 0.2); }
 
         /* --- ANIMATIONS --- */
         @keyframes spin { 100% { transform: rotate(360deg); } }
         @keyframes slideUp { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .fade-out { opacity: 0; pointer-events: none; }
-        .hide { transform: scale(0.9); opacity: 0; }
-
+        .hide { transform: scale(0.95); opacity: 0; }
     </style>
 </head>
 <body>
@@ -313,15 +334,15 @@
         <div class="auth-card" id="login-box">
             <h1 class="logo-main">WAZE</h1>
             <p class="tagline">Le Mapane Virtuel du Gabon 🇬🇦</p>
-            <button class="btn btn-google" onclick="loginWithGoogle()">
+            <button class="btn btn-google" onclick="window.loginWithGoogle()">
                 <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" width="20" alt="G">
                 Rejoindre le Mapane
             </button>
-            <p style="font-size: 0.8rem; color: var(--text-dim);">Discussion vidéo et message instantanée</p>
+            <p style="font-size: 0.8rem; color: var(--text-dim);">Discussion vidéo et message sécurisée</p>
         </div>
 
         <div class="auth-card" id="register-form" style="display:none;">
-            <h2 style="margin-top:0">Ton Profil</h2>
+            <h2 style="margin: 0 0 20px 0;">Ton Profil</h2>
             <div class="form-group">
                 <input type="text" id="reg-name" placeholder="Pseudo / Petit nom">
                 <select id="reg-gender">
@@ -341,7 +362,7 @@
                     <option value="Ogooué-Maritime">Ogooué-Maritime</option>
                     <option value="Woleu-Ntem">Woleu-Ntem</option>
                 </select>
-                <button class="btn btn-primary" onclick="finishRegistration()">VALIDER</button>
+                <button class="btn btn-primary" onclick="window.finishRegistration()">VALIDER</button>
             </div>
         </div>
     </div>
@@ -349,11 +370,11 @@
     <!-- 2. MODE SELECTION -->
     <div id="selection-screen" class="screen" style="display:none;">
         <div class="auth-card">
-            <h3>Bonjour ! 👋</h3>
-            <p class="tagline">Choisis comment tu veux mapaner aujourd'hui</p>
-            <button class="btn btn-primary" onclick="startChatMode('video')">Discussion Vidéo</button>
-            <button class="btn btn-outline" onclick="startChatMode('text')">Messages Privés</button>
-            <button class="btn btn-outline" style="color:#ff4444" onclick="logout()">Déconnexion</button>
+            <h3 style="margin-top:0">Prêt pour le Mapane ?</h3>
+            <p class="tagline">Choisis ton mode de discussion</p>
+            <button class="btn btn-primary" onclick="window.startChatMode('video')">Discussion Vidéo</button>
+            <button class="btn btn-outline" onclick="window.startChatMode('text')">Messages Privés</button>
+            <button class="btn btn-outline" style="color:#ff4444; border-color: rgba(255,68,68,0.2)" onclick="window.logout()">Déconnexion</button>
         </div>
     </div>
 
@@ -362,38 +383,36 @@
         <header>
             <div style="font-weight: 900; letter-spacing: -1px; font-size: 1.4rem;">WAZE<span style="color:var(--primary)">.GA</span></div>
             <div class="status-badge"><div class="status-dot"></div> Live Match</div>
-            <button onclick="location.reload()" style="background:none; border:none; color:var(--text-dim); cursor:pointer;">Quitter</button>
+            <button onclick="location.reload()" style="background:none; border:none; color:var(--text-dim); cursor:pointer; font-weight:600;">Quitter</button>
         </header>
 
         <div class="video-workspace">
-            <!-- Recherche Overlay -->
             <div id="matching-overlay">
                 <div class="spinner"></div>
-                <p style="font-weight: 600; letter-spacing: 1px;">RECHERCHE D'UN COMPATRIOTE...</p>
-                <p style="color:var(--text-dim); font-size: 0.9rem;">Prépare-toi, ça va chauffer !</p>
+                <p style="font-weight: 600; letter-spacing: 1px; margin:0">MATCHING EN COURS...</p>
+                <p style="color:var(--text-dim); font-size: 0.8rem; margin-top:5px;">On cherche un compatriote pour toi.</p>
             </div>
 
             <div id="video-layout">
                 <div class="partner-chip">
-                    <span class="name" id="current-partner-name">En attente</span>
+                    <span class="name" id="current-partner-name">En attente...</span>
                     <span class="loc" id="current-partner-loc">Gabon</span>
                 </div>
-                <video id="remoteVideo" class="remote-v" autoplay playsinline poster="https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&q=80&w=1000"></video>
+                <video id="remoteVideo" class="remote-v" autoplay playsinline poster="https://www.transparenttextures.com/patterns/carbon-fibre.png"></video>
                 <video id="localVideo" class="local-v" autoplay muted playsinline></video>
             </div>
 
-            <!-- Chat Area -->
             <div id="chat-area">
                 <div id="chat-messages"></div>
                 <div class="chat-input-row">
-                    <input type="text" id="chat-input" placeholder="Dis quelque chose de gentil...">
-                    <button class="btn btn-primary" style="width: auto; padding: 10px 20px; border-radius: 30px;" onclick="sendMessage()">Envoyer</button>
+                    <input type="text" id="chat-input" placeholder="Écris un message...">
+                    <button class="btn btn-primary" style="width: auto; padding: 10px 20px; border-radius: 25px;" onclick="window.sendMessage()">Envoyer</button>
                 </div>
             </div>
         </div>
 
         <footer class="app-footer">
-            <button class="btn btn-primary btn-swap" onclick="nextMapane()">
+            <button class="btn btn-primary btn-swap" onclick="window.nextMapane()">
                 PROCHAIN MAPANE 🔄
             </button>
         </footer>
